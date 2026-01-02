@@ -1,3 +1,8 @@
+
+<p align="center">
+<img src="https://upload.wikimedia.org/wikipedia/commons/e/ef/Youtube_logo.png" width="200">
+</p>
+
 # YouTube playlist Organizer
 
 A Python project to help organize YouTube playlists by automatically adding new videos
