@@ -6,7 +6,7 @@ from pathlib import Path
 class filesManager:
     # 1. Store the paths
     content_creator_folder = Path('Content Creators')
-    content_creator_folder_response = Path('Content Creators Response')
+    # content_creator_folder_response = Path('Content Creators Response')
     exception_folder = Path('Exceptions')
     playlist_folder =  Path("Playlists")
     restriction_folder = Path('Restrictions')

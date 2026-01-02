@@ -1,0 +1,9 @@
+pandas
+requests
+pyperclip
+isodate
+ipython
+google-api-python-client
+google-auth
+google-auth-oauthlib
+jupyter
