@@ -17,3 +17,5 @@ Playlist_manager.ipynb
 YouTube_fnc.py
 YouTube.ipynb
 YT_files_manager.ipynb
+.ipynb_checkpoints/
+*.ipynb_checkpoints
