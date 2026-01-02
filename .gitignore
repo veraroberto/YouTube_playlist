@@ -1,0 +1,19 @@
+__pycache__/
+*.pyc
+.env
+venv/
+.DS_Store
+Content Creators/
+Content Creators Response/
+Exceptions/
+Playlists/
+Restrictions/
+Stats/
+Tokens/
+API_KEY.py
+added_manually_id.ipynb
+app old.py
+Playlist_manager.ipynb
+YouTube_fnc.py
+YouTube.ipynb
+YT_files_manager.ipynb
