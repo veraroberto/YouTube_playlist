@@ -2,10 +2,18 @@
   <img src="https://upload.wikimedia.org/wikipedia/commons/e/ef/Youtube_logo.png" width="200">
 </p>
 
+
 # YouTube Playlist Organizer
 
 A Python project to help organize YouTube playlists by automatically adding new videos
 to private playlists using the YouTube Data API.
+
+- [Important Notes](#important-notes)
+- [Motivation](#motivation)
+- [Project Structure](#project-structure)
+- [Usage](#usage)
+
+
 
 ## Important Notes
 
