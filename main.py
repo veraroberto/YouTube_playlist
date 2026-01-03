@@ -2,6 +2,7 @@ from YouTube import YouTubeManager
 from filesManager import filesManager
 from app import app
 from response import response_manager
+from manage_video_ids import add_video_manually
 
 
 # from itertools import count
@@ -21,28 +22,40 @@ def main():
         description="YouTube Playlist Organizer"
     )
 
-    parser.add_argument("--quota",action="store_true",
-        help="Show today's consumed YouTube API quota"
-    )
-
+    # parser.add_argument("--quota",action="store_true",
+    #     help="Show today's consumed YouTube API quota"
+    # )
+    subparsers = parser.add_subparsers(dest="command", required=True)
+    subparsers.add_parser("quota", help="Show today's consumed YouTube API quota")
+    add_parser = subparsers.add_parser("add-video", help="Manually add a video by ID to the files")
+    add_parser.add_argument("--video_id", required=True)
     args = parser.parse_args()
-
-    if args.quota:
-        files_manager = filesManager()
-        files_manager.get_today_quota(True)
-        return
-    
 
     files_manager = filesManager()
     yt = YouTubeManager()
     functions = app()
     response_mnr = response_manager()
-    files_manager.get_today_quota(True)
+
+
+    if args.command == 'quota':
+        files_manager = filesManager()
+        files_manager.get_today_quota(True)
+        return
+    
+    # add_video_manually(YouTubeManager, filesManager, response_mnr, video_id, verbose=True)
+    if args.command == "add-video":
+        add_video_manually(yt, 
+                           files_manager, 
+                           response_mnr, 
+                           video_id=args.video_id, 
+                           verbose=True)
+        return
+
 
 
     YT_content_creators_iter = functions.get_df_to_iterate(files_manager.playlist_folder, files_manager.YT_content_creators)
 
-    yt_channel = 'https://www.youtube.com/channel/'
+    # yt_channel = 'https://www.youtube.com/channel/'
     yt_url = 'https://www.youtube.com/watch?v='
 
     ## Creates the Dictionary of the Playlists
@@ -59,10 +72,8 @@ def main():
 
     shorts_playlist_name = 'Shorts To Watch'
     other_playlist_name = 'Videos To Watch'
-    # Joey_playlist = 'Joey'
     WL_shorts_playlist = 'Watch Later Shorts'
-    # TBBT_playlist = 'The Official BBT Podcast'
-    vertical_video_id = 'dHtSz14yQe8'
+    # vertical_video_id = 'dHtSz14yQe8'
     special_playlist = [other_playlist_name, WL_shorts_playlist, shorts_playlist_name]
     # youtube_names.extend({'Path': None, 'Name': playlist} for playlist in special_playlist)
     youtube_names.extend(special_playlist)
@@ -257,7 +268,7 @@ def main():
     if was_braked:
         print(f'The process was interrupted. The last video is was {video_id} from {file_path.name}')
     consumed_quota = files_manager.get_today_quota(False) - quota_i
-    print(f'It was consumed {consumed_quota:,} quotas in the adding process and the final quota is {files_manager.get_today_quota(False)}')
+    print(f'It was consumed {consumed_quota:,} quotas in the adding process and the final quota is {files_manager.get_today_quota(False):,}')
     if added_videos:
         alignment = max(len(playlist) for playlist in added_videos)
         # sorted_keys = sorted(added_videos, key=lambda x:len(added_videos[x]), reverse=True)

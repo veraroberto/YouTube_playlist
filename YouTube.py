@@ -54,6 +54,15 @@ class YouTubeManager:
         self.files_manager.add_to_today_quota(1)
         return response
 
+    def get_channel_response(self, channel_id):
+        """Fetch the uploads playlist ID for a channel."""
+        response = self.youtube.channels().list(
+            part="contentDetails,snippet,statistics",
+            id=channel_id
+        ).execute()
+        self.files_manager.add_to_today_quota(1)
+        return response 
+
     def get_all_playlists(self):
         """Retrieve all playlists from the authenticated account."""
         playlists = []

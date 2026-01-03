@@ -131,8 +131,7 @@ class filesManager:
             else:
                 # .read_text().splitlines() is safer than manual splitting
                 return file_path.read_text(encoding="utf-8").splitlines()
-
-    
+ 
     def add_list_to_file(self, file_path, list_elements, sort_list=True):
         file_path = Path(file_path).with_suffix('.txt')
         if not file_path.exists():
@@ -173,10 +172,6 @@ class filesManager:
         # If it's not in the list, use add_list_to_file to save it
         return self.add_list_to_file(file_path, [element], sort_list)
 
-
-            
-
-
     def find_missing_elements(self, search_list):
         # Convert to a set so we can remove items as we find them
         remaining_to_find = set(search_list)       
@@ -200,3 +195,5 @@ class filesManager:
     
         # Convert back to list or return as set
         return list(remaining_to_find)
+
+    
