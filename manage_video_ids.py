@@ -3,12 +3,15 @@ from IPython.display import clear_output  # optional, can remove later
 
 
 
-def add_video_manually(YouTubeManager, filesManager, response_mnr, video_id, verbose=True):
+def add_video_manually(YouTubeManager, filesManager, video_id):
     video_id = video_id.strip()
-    # response = YouTubeManager.get_response_video_id(YouTubeManager.youtube, filesManager.quota_filename, video_id)
     response = YouTubeManager.get_response_video_id(video_id)
-    channelId = response['items'][0]['snippet']['channelId']
-    # response_channel = YouTubeManager.get_channel_response(YouTubeManager.youtube, filesManager.quota_filename, channelId)
+    items = response.get('items', [])
+    if not items:
+        print(f'Video ID {video_id} does not have any information')
+        return
+    
+    channelId = items[0]['snippet']['channelId']
     response_channel = YouTubeManager.get_channel_response(channelId)
     handle = response_channel['items'][0]['snippet']['customUrl'].replace('@', '')
     handle_file_path = filesManager.content_creator_folder / f'{handle}.txt'
@@ -19,23 +22,19 @@ def add_video_manually(YouTubeManager, filesManager, response_mnr, video_id, ver
         clear_output(wait=False)
         print('The file handle does not exists')
 
+def manage_exceptions(filesManager, app):
+    options = [file for file in filesManager.exception_folder.iterdir() if file.suffix == '.txt']
+    exception_file = app.choose_option(options, message="Choose the Exception to add: ")
+    exception_element = input(f'Handle or Title to Add in {exception_file.stem}: ')
+    filesManager.add_element_to_file(exception_file, exception_element, sort_list=True, print_statement=True)
+    print(exception_file)
 
-# video_id = get_video_id(input('Add a video ID manually: ').strip())
-# print(yt_url + video_id)
-# response = get_response_video_id(youtube, quota_filename, video_id)
-# metadata_video = get_metadata_video(response)
-# channelId = response['items'][0]['snippet']['channelId']
-# response_channel = get_channel_response(youtube, quota_filename, channelId)
-# handle = response_channel['items'][0]['snippet']['customUrl'].replace('@', '')
-# print(f'The YouTube handle is: {handle}')
-# print(f'https://www.youtube.com/channel/{channelId}')
-# for info in metadata_video:
-#     print(info)
-# handle_file_path = Content_Creator_folder / f'{handle}.txt'
 
-# if handle_file_path.exists():
-#     print(handle_file_path)
-#     add_element_to_file(handle_file_path, video_id, True, True)
-# else:
-#     clear_output(wait=False)
-#     print('Not Added')
+
+if __name__ == "__main__":
+    from filesManager import filesManager
+    from app import app
+    fm = filesManager()
+    fncs = app()
+
+    manage_exceptions(fm, fncs)

@@ -2,7 +2,7 @@ from YouTube import YouTubeManager
 from filesManager import filesManager
 from app import app
 from response import response_manager
-from manage_video_ids import add_video_manually
+from manage_video_ids import add_video_manually, manage_exceptions
 
 
 # from itertools import count
@@ -22,13 +22,16 @@ def main():
         description="YouTube Playlist Organizer"
     )
 
-    # parser.add_argument("--quota",action="store_true",
-    #     help="Show today's consumed YouTube API quota"
-    # )
+ 
     subparsers = parser.add_subparsers(dest="command", required=True)
     subparsers.add_parser("quota", help="Show today's consumed YouTube API quota")
+
     add_parser = subparsers.add_parser("add-video", help="Manually add a video by ID to the files")
     add_parser.add_argument("--video_id", required=True)
+
+    add_parser = subparsers.add_parser("add-exception", help="Add an exception to a file")
+    add_parser.add_argument("--exception", required=False)
+
     args = parser.parse_args()
 
     files_manager = filesManager()
@@ -43,14 +46,17 @@ def main():
         return
     
     # add_video_manually(YouTubeManager, filesManager, response_mnr, video_id, verbose=True)
-    if args.command == "add-video":
+    elif args.command == "add-video":
+        # add_video_manually(YouTubeManager, filesManager, video_id)
         add_video_manually(yt, 
                            files_manager, 
-                           response_mnr, 
                            video_id=args.video_id, 
-                           verbose=True)
+                           )
         return
 
+    elif args.command == "add-exception":
+        manage_exceptions(files_manager, functions)
+        return  
 
 
     YT_content_creators_iter = functions.get_df_to_iterate(files_manager.playlist_folder, files_manager.YT_content_creators)
