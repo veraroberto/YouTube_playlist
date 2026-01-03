@@ -4,7 +4,7 @@ from filesManager import filesManager
 from YouTube import YouTubeManager
 
 
-class response():
+class response_manager():
     default_date = "2005-04-24T03:31:52Z" #Timestamp of the first YouTube video ever published 
     current_country = 'MX'
     def __init__(self):
@@ -64,7 +64,7 @@ class response():
     
         items = response.get('items', [])
         if not items:
-            print("Response dosen't have have items")
+            print("Response doesn't have have items")
             return
         videoID = items[0].get('id', "")
         if videoID in df['videoID'].values:
