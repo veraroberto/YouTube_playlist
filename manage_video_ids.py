@@ -4,6 +4,8 @@ from IPython.display import clear_output  # optional, can remove later
 
 
 def add_video_manually(YouTubeManager, filesManager, video_id):
+    if video_id is None:
+        video_id = input('Video ID to add a file: ')
     video_id = video_id.strip()
     response = YouTubeManager.get_response_video_id(video_id)
     items = response.get('items', [])

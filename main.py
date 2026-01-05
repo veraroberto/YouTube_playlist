@@ -23,14 +23,14 @@ def main():
     )
 
  
-    subparsers = parser.add_subparsers(dest="command", required=True)
+    subparsers = parser.add_subparsers(dest="command")
     subparsers.add_parser("quota", help="Show today's consumed YouTube API quota")
 
     add_parser = subparsers.add_parser("add-video", help="Manually add a video by ID to the files")
-    add_parser.add_argument("--video_id", required=True)
+    add_parser.add_argument("--video_id", required=False, help="YouTube video ID to add (if not provided, you'll be prompted)")
 
-    add_parser = subparsers.add_parser("add-exception", help="Add an exception to a file")
-    add_parser.add_argument("--exception", required=False)
+    subparsers.add_parser("add-exception", help="Add an exception to a file")
+    
 
     args = parser.parse_args()
 
@@ -47,7 +47,6 @@ def main():
     
     # add_video_manually(YouTubeManager, filesManager, response_mnr, video_id, verbose=True)
     elif args.command == "add-video":
-        # add_video_manually(YouTubeManager, filesManager, video_id)
         add_video_manually(yt, 
                            files_manager, 
                            video_id=args.video_id, 
@@ -122,7 +121,8 @@ def main():
     WL_shorts = files_manager.get_elements_from_file(WL_shorts_path, create_file = True)
 
     missing_video_ids = files_manager.find_missing_elements(all_ids_from_playlist)
-    print(len(missing_video_ids))
+    if missing_video_ids:
+        print(len(missing_video_ids))
     saved_quota = 0
     manually_added = defaultdict(list)
 
@@ -138,7 +138,7 @@ def main():
             handle_path = files_manager.content_creator_folder / f'{handle}.txt'
             files_manager.add_element_to_file(handle_path, video_id, sort_list = False, print_statement = True)
             manually_added[handle].append(response)
-            saved_quota += 50
+            saved_quota += 49
         else:
             print(f'{yt_url}{video_id}')
     print(f'The saved quota was: {saved_quota:,}')
