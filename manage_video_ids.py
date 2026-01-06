@@ -26,8 +26,15 @@ def add_video_manually(YouTubeManager, filesManager, video_id):
 
 def manage_exceptions(filesManager, app):
     options = [file for file in filesManager.exception_folder.iterdir() if file.suffix == '.txt']
+    options.append('New Exception File')
     exception_file = app.choose_option(options, message="Choose the Exception to add: ")
-    exception_element = input(f'Handle or Title to Add in {exception_file.stem}: ')
+    if exception_file == options[-1]:
+        new_file_name = input('New file:').strip()
+        exception_file = filesManager.exception_folder / new_file_name
+        exception_element = input(f'Video ID of a Vertical Video ID: ')
+        
+    else:
+        exception_element = input(f'Handle or Title to Add in {exception_file.stem}: ').lower()
     filesManager.add_element_to_file(exception_file, exception_element, sort_list=True, print_statement=True)
     print(exception_file)
 

@@ -1,3 +1,4 @@
+import argparse
 from YouTube import YouTubeManager
 from filesManager import filesManager
 from app import app
@@ -8,7 +9,7 @@ from manage_video_ids import add_video_manually, manage_exceptions
 # from itertools import count
 from pathlib import Path
 from collections import defaultdict
-import argparse
+
 # import pandas as pd
 
 import time, re
@@ -44,9 +45,9 @@ def main():
         files_manager = filesManager()
         files_manager.get_today_quota(True)
         return
-    
-    # add_video_manually(YouTubeManager, filesManager, response_mnr, video_id, verbose=True)
+
     elif args.command == "add-video":
+        
         add_video_manually(yt, 
                            files_manager, 
                            video_id=args.video_id, 
@@ -78,7 +79,7 @@ def main():
     shorts_playlist_name = 'Shorts To Watch'
     other_playlist_name = 'Videos To Watch'
     WL_shorts_playlist = 'Watch Later Shorts'
-    # vertical_video_id = 'dHtSz14yQe8'
+    vertical_video_id = files_manager.get_elements_from_file(files_manager.exception_folder / "vertical_video.txt", create_file=False)
     special_playlist = [other_playlist_name, WL_shorts_playlist, shorts_playlist_name]
     # youtube_names.extend({'Path': None, 'Name': playlist} for playlist in special_playlist)
     youtube_names.extend(special_playlist)
@@ -255,8 +256,13 @@ def main():
                 response_playlist = yt.create_private_playlist(playlist, playlist)
                 playlist_id = response_playlist.get('id', "")
                 youtube_playlists[playlist]["Playlist_ID"] = playlist_id
+
                 if not playlist_id:
                     continue
+                if "shorts" in playlist.lower():
+                    for video_id in vertical_video_id:
+                        yt.add_video_to_playlist(playlist_id, video_id)
+                
             for video_info in new_video_ids:
                 file_path = video_info['file_path']
                 video_id = video_info['video_id']
