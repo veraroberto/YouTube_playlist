@@ -50,7 +50,7 @@ def main():
         
         add_video_manually(yt, 
                            files_manager, 
-                           video_id=args.video_id, 
+                           url=args.video_id, 
                            )
         return
 
@@ -124,9 +124,9 @@ def main():
     missing_video_ids = files_manager.find_missing_elements(all_ids_from_playlist)
     if missing_video_ids:
         print(len(missing_video_ids))
+
     saved_quota = 0
     manually_added = defaultdict(list)
-
     for video_id in missing_video_ids:
         response = yt.get_response_video_id(video_id)
         items = response.get('items',[])

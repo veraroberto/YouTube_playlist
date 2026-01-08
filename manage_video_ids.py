@@ -1,12 +1,24 @@
 from pathlib import Path
 from IPython.display import clear_output  # optional, can remove later
+from urllib.parse import urlparse, parse_qs
+
+def get_video_id(url):
+    url = url.strip().replace('https://www.youtube.com/shorts/', 'https://www.youtube.com/watch?v=')
+    if 'https://www.youtube.com/watch?v=' not in url:
+        return url
+    parsed = urlparse(url)
+    query = parse_qs(parsed.query)
+    return query.get("v", [0])[0]  # default to 0 if missing
 
 
 
-def add_video_manually(YouTubeManager, filesManager, video_id):
-    if video_id is None:
-        video_id = input('Video ID to add a file: ')
-    video_id = video_id.strip()
+def add_video_manually(YouTubeManager, filesManager, url):
+    if url is None:
+        video_id = get_video_id(input('Video ID to add a file: '))
+    else:
+        video_id = get_video_id(url.strip())
+        if video_id == 0:
+            print(f'{url} is not a valid url or video id')
     response = YouTubeManager.get_response_video_id(video_id)
     items = response.get('items', [])
     if not items:
@@ -43,7 +55,9 @@ def manage_exceptions(filesManager, app):
 if __name__ == "__main__":
     from filesManager import filesManager
     from app import app
-    fm = filesManager()
-    fncs = app()
+#    fm = filesManager()
+#    fncs = app()
 
-    manage_exceptions(fm, fncs)
+#    manage_exceptions(fm, fncs)
+    url = "https://www.youtube.com/watch?v=lGDwDmw_ObU&list=TLPQMDcwMTIwMjanNHQ3JhjtYQ&index=2"
+    print(get_video_id(url))
