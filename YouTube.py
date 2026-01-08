@@ -3,6 +3,8 @@ from googleapiclient.discovery import build
 from googleapiclient.errors import HttpError
 from google_auth_oauthlib.flow import InstalledAppFlow
 from google.auth.transport.requests import Request
+from API_KEY import api_key
+import requests
 
 from filesManager import filesManager
 
@@ -104,7 +106,7 @@ class YouTubeManager:
             request = self.youtube.subscriptions().list_next(request, response)
         return subscriptions
 
-    def get_all_ids_playlist(self, playlist_id, max_iternations = 5):
+    def get_all_ids_playlist(self, playlist_id, max_iterations = 5):
         """Retrieve all video IDs from a playlist, handling pagination."""
         iterations = 0
         video_ids = []
@@ -127,7 +129,7 @@ class YouTubeManager:
                 # Check if there's another page of results
                 next_page_token = response.get("nextPageToken")
                 iterations += 1
-                if iterations == max_iternations:
+                if iterations == max_iterations:
                     break
         
                 if not next_page_token:
@@ -136,6 +138,7 @@ class YouTubeManager:
         except HttpError as e:
             print(f"An error occurred while getting all the Playlist {playlist_id}: {e}")
             return []
+    
     def create_private_playlist(self, title, description):
         """Create a private playlist on YouTube."""
         try:
@@ -184,3 +187,20 @@ class YouTubeManager:
         except HttpError as e:
             print(f"An error occurred while adding {video_id} in the Playlist {playlist_id}: {e}")
             return None
+        
+    def get_response_channel_by_handle(self, handle):
+        handle = "@" + handle.replace('@', "")
+        url = f"https://youtube.googleapis.com/youtube/v3/channels?forHandle={handle}&part=snippet,statistics,contentDetails&key={api_key}"
+        response = requests.get(url)
+        self.files_manager.add_to_today_quota(1)
+        data = response.json()
+        channelId = data['items'][0]['id']
+        channelTitle = data['items'][0]['snippet']['title']
+        uploads = data['items'][0]['contentDetails']['relatedPlaylists']['uploads']
+        return channelId, channelTitle, uploads
+
+
+
+
+
+

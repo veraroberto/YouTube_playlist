@@ -41,7 +41,17 @@ class df_manager:
                 return
             else:
                 print(f'{handle} is going to be added to the Data Frame')
+                channelId, channelTitle, uploads = self.yt.get_response_channel_by_handle(handle)
+                video_ids_yt = self.yt.get_all_ids_playlist(uploads,900)
             
+            if video_ids_yt:    
+            # print(f'Time getting the video ids: {duration_string(time.time() - inicio)}')
+                file_path = self.files_manager.content_creator_folder / f'{handle}.txt'
+                print(f'{handle} has {len(video_ids_yt):,} videos')
+                new_row = handle, channelTitle, channelId, uploads
+                elements = video_ids_yt[1:]
+
+                # print(f'The duration to write the file was: {duration_string(time.time() - inicio)}')
 
 
         elif chosen == options[2]:
@@ -60,17 +70,8 @@ class df_manager:
             if playlist_file_path.exists():
                 print(f'The new Playlist: {new_playlist_name} is already in the files.')
             else:
-                
                 self.files_manager.add_element_to_file(playlist_file_path, handle, sort_list=True, print_statement=False)
-            # playlist_exist = next((d["name"] for d in playlists_info if new_playlist_name in d.values()), None)
-            # if playlist_exist is None:
-            #     print(f'{new_playlist_name} is going to be created')
 
-
-                # # playlist_id = next((d["id"] for d in playlists_info if handle_playlist in d.values()), None)
-                # print(f'Playlist Name: {handle_playlist}')
-                # print(f'Playlist ID: {playlist_id}')
-            
 
     
 
