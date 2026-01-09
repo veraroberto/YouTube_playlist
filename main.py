@@ -12,11 +12,9 @@ from collections import defaultdict
 
 # import pandas as pd
 
-import time, re
-# files_manager = filesManager()
-# yt = YouTubeManager()
-# functions = app()
-# response_mnr = response()
+import time, re, pyperclip
+
+from app_functions import choose_option
 
 def main():
     parser = argparse.ArgumentParser(
@@ -29,6 +27,9 @@ def main():
 
     add_parser = subparsers.add_parser("add-video", help="Manually add a video by ID to the files")
     add_parser.add_argument("--video_id", required=False, help="YouTube video ID to add (if not provided, you'll be prompted)")
+
+    add_parser = subparsers.add_parser("add-list-videos", help="Manually add a list of video by ID to the files")
+    add_parser.add_argument("--video_id", required=False, help="Copies the URL from the clipboard")
 
     subparsers.add_parser("add-exception", help="Add an exception to a file")
     
@@ -47,12 +48,25 @@ def main():
         return
 
     elif args.command == "add-video":
-        
-        add_video_manually(yt, 
-                           files_manager, 
-                           url=args.video_id, 
-                           )
+        while True:
+            add_video_manually(yt, 
+                            files_manager, 
+                            url=args.video_id, 
+                            )
+            if not choose_option([True, False], message="Add another video ID: "):
+                break
         return
+    elif args.command == 'add-list-videos':
+        input('Click enter when the list of links is in the clipbaord ')
+        links_list = pyperclip.paste().splitlines()
+        for video_id in links_list:
+            add_video_manually(yt,
+                               files_manager,
+                               url=video_id
+                               )
+
+        return
+
 
     elif args.command == "add-exception":
         manage_exceptions(files_manager, functions)
@@ -60,7 +74,9 @@ def main():
 
 
     YT_content_creators_iter = functions.get_df_to_iterate(files_manager.playlist_folder, files_manager.YT_content_creators)
-
+    if YT_content_creators_iter is None:
+        print("Doing Nothing")
+        return
     # yt_channel = 'https://www.youtube.com/channel/'
     yt_url = 'https://www.youtube.com/watch?v='
 

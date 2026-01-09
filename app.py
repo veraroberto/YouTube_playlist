@@ -52,7 +52,8 @@ class app():
                           'Podcast or Playlist from a Channel',
                           'Only some Playlist in the iteration',
                           'Remove Playlist from the iteration',
-                          'Only search for some Handles']
+                          'Only search for some Handles',
+                          'Exit Process']
         search_handles = self.choose_option(search_options, 'Search for a Particular Handles')
         
         if search_handles == search_options[0]:
@@ -108,6 +109,9 @@ class app():
                     print(f'Handles to be include in the DataFrame: {", ".join(handles_filter)}')
                     break
             YT_content_creators_iter = YT_content_creators[YT_content_creators['Handle'].isin(handles_filter)].reset_index(drop=True)
+        elif search_handles == search_options[5]:
+            return None
+        
         return YT_content_creators_iter
 
     def duration_string(self,duration):
