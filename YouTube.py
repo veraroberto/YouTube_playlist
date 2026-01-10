@@ -227,6 +227,21 @@ class YouTubeManager:
         return channelId, channelTitle, uploads
 
 
+if __name__ =='__main__':
+    # ,Andres Agulla,UC7LMKjP8uqyRIjJGr44SY4A,UU7LMKjP8uqyRIjJGr44SY4A
+    uploadId = "UU7LMKjP8uqyRIjJGr44SY4A"
+    fm = filesManager()
+    yt = YouTubeManager()
+    file_path = fm.content_creator_folder / 'aagulla.txt'
+    video_ids = fm.get_elements_from_file(file_path, create_file=False)
+    playlist = yt.get_all_playlists()
+    print(playlist)
+    new_uploads = yt.get_all_ids_playlist(uploadId, 1)
+
+    for video_id in new_uploads:
+        if video_id not in video_ids:
+            print(video_id)
+
 
 
 
