@@ -25,25 +25,52 @@ class YouTubeManager:
     default_date = "2005-04-24T03:31:52Z" #Timestamp of the first YouTube video ever published 
     quota_limit = 9900 # I set at this value since sometime the API doesn't allow for more request when you are to close to the limit.
     
+    """ 
     def _authenticate(self):
-        """Internal method to handle authentication logic."""
+        #Internal method to handle authentication logic
         SCOPES = ["https://www.googleapis.com/auth/youtube"]
         creds = None
         token_file = self.tokens_folder / "token.pickle"
         credentials_json = self.tokens_folder / 'credentials.json'
 
         if token_file.is_file():
-            with open(token_file, "rb") as token:
+            with open(str(token_file), "rb") as token:
                 creds = pickle.load(token)
 
         if not creds or not creds.valid:
             if creds and creds.expired and creds.refresh_token:
                 creds.refresh(Request())
             else:
-                flow = InstalledAppFlow.from_client_secrets_file(credentials_json, SCOPES)
+                flow = InstalledAppFlow.from_client_secrets_file(str(credentials_json), SCOPES)
                 creds = flow.run_local_server(port=0)
-            with open(token_file, "wb") as token:
+            with open(str(token_file), "wb") as token:
                 pickle.dump(creds, token)
+
+        return build("youtube", "v3", credentials=creds)
+    """
+    def _authenticate(self):
+        SCOPES = ["https://www.googleapis.com/auth/youtube"]
+        token_file = self.tokens_folder / "token.pickle"
+        credentials_json = self.tokens_folder / "credentials.json"
+
+        creds = None
+
+        # Load existing token
+        if token_file.exists():
+            with open(token_file, "rb") as f:
+                creds = pickle.load(f)
+
+        # If no valid credentials, fix them
+        if not creds:
+            flow = InstalledAppFlow.from_client_secrets_file(str(credentials_json), SCOPES)
+            creds = flow.run_local_server(port=0)
+
+        elif creds.expired and creds.refresh_token:
+            creds.refresh(Request())
+
+        # Save back to disk
+        with open(token_file, "wb") as f:
+            pickle.dump(creds, f)
 
         return build("youtube", "v3", credentials=creds)
 

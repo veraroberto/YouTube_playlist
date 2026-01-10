@@ -1,17 +1,18 @@
-import isodate
+import isodate, json
 import pandas as pd
 from filesManager import filesManager
 from YouTube import YouTubeManager
-
+from urllib.request import urlopen
 
 class response_manager():
     default_date = "2005-04-24T03:31:52Z" #Timestamp of the first YouTube video ever published 
-    current_country = 'MX'
+
     def __init__(self):
         self.files_manager = filesManager()
         self.youtube = YouTubeManager()
+        self.data = json.load(urlopen('https://ipinfo.io/'))
+        self.current_country = self.data.get('country')
         
-
     def get_video_info(self, response):
         items = response.get('items', [])
         if not items:
@@ -31,8 +32,8 @@ class response_manager():
         duration = isodate.parse_duration(duration_iso).total_seconds()
         liveBroadcastContent = snippet.get('liveBroadcastContent', None)
         liveStreamingDetails = items[0].get('liveStreamingDetails', None)
-
         video_id_info = {'video_id': video_id,
+                         'channelTitle': channelTitle,
                          'publishedAt': publishedAt,
                          'title': title,
                          'duration' : duration,
@@ -86,3 +87,6 @@ class response_manager():
         df.sort_values(by="publishedAt", ascending=True, inplace=True, ignore_index=True)
         self.files_manager.write_csv_safely(df, file_path)
 
+if __name__ == '__main__':
+    response_mng = response_manager()
+ 

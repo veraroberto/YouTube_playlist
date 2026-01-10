@@ -56,6 +56,7 @@ def main():
             if not choose_option([True, False], message="Add another video ID: "):
                 break
         return
+    
     elif args.command == 'add-list-videos':
         input('Click enter when the list of links is in the clipbaord ')
         links_list = pyperclip.paste().splitlines()
@@ -64,9 +65,7 @@ def main():
                                files_manager,
                                url=video_id
                                )
-
         return
-
 
     elif args.command == "add-exception":
         manage_exceptions(files_manager, functions)
@@ -90,7 +89,6 @@ def main():
                                     "new_video_ids": [],
                                     }
                                     )
-
 
     shorts_playlist_name = 'Shorts To Watch'
     other_playlist_name = 'Videos To Watch'
@@ -139,10 +137,12 @@ def main():
 
     missing_video_ids = files_manager.find_missing_elements(all_ids_from_playlist)
     if missing_video_ids:
-        print(len(missing_video_ids))
+        print(f'There are {len(missing_video_ids)} videos not in the files')
 
     saved_quota = 0
     manually_added = defaultdict(list)
+
+    not_in_df = []
     for video_id in missing_video_ids:
         response = yt.get_response_video_id(video_id)
         items = response.get('items',[])
@@ -157,8 +157,18 @@ def main():
             manually_added[handle].append(response)
             saved_quota += 49
         else:
-            print(f'{yt_url}{video_id}')
+            not_in_df.append(response)
+            
     print(f'The saved quota was: {saved_quota:,}')
+    if not_in_df:
+        print('Handles not in Data Frame')
+        for response in not_in_df:
+            video_info = response_mnr.get_video_info(response)
+            print(f"\t{video_info['title']}")
+            print(f"\t{video_info['channelTitle']}")
+            print(f"\t{video_info['publishedAt']}")
+            print(f"\t{yt_url}{video_info['video_id']}")
+            print('*'*50)
 
     if manually_added:
         print('Videos IDs that were manually added to any playlist')
@@ -174,12 +184,10 @@ def main():
             print('-'*50)
 
     # Get the new IDs
-
     was_braked = False
     num_rows = len(YT_content_creators_iter)
     digits = len(str(num_rows))
     message = ''
-    missing_handles = []
     ids_with_error = []
     liveStream = []
     start = time.time()
@@ -201,14 +209,13 @@ def main():
         playlist_key = next((key for key, handles in youtube_playlists.items() if handle in handles.get('Handles',[])), None)
 
         for video_id in videos_ids:
-            if video_id not in handle_ids:# or video_id not in all_ids_from_playlist:
+            if video_id not in handle_ids or video_id not in all_ids_from_playlist:
                 response = yt.get_response_video_id(video_id)
                 video_id_info = response_mnr.get_video_info(response)
                 video_id_info['file_path'] = file_path
                 video_id_info['response'] = response
                 if not video_id_info:
                     continue            
-                
                 elif video_id_info['liveBroadcastContent'] == 'upcoming' or  video_id_info['duration'] == 0:
                     continue
                 elif response_mnr.is_restricted(response):
@@ -228,7 +235,6 @@ def main():
                     if short is None:
                         was_braked = True
                         break
-                        
                     elif short is True:
                         if handle in WL_shorts:
                             youtube_playlists[WL_shorts_playlist]['new_video_ids'].append(video_id_info)
@@ -240,10 +246,9 @@ def main():
                         youtube_playlists[playlist_key]['new_video_ids'].append(video_id_info)
                     else:
                         youtube_playlists[other_playlist_name]['new_video_ids'].append(video_id_info)
-
         if was_braked:
             break                 
-                
+    
     print(" "*len(message), end='\r')
     print(f'Duration to getting the new IDs => {functions.duration_string(time.time() - start)}')
     if not was_braked:
@@ -309,7 +314,6 @@ def main():
             num_videos = len(added_videos[playlist])
             bold_key = f"\033[1;4m{playlist}:\033[0m" 
             extra_alignment = len(bold_key) - len(ansi_pattern.sub('', bold_key)) + 1
-
             print(f'{bold_key:<{alignment + extra_alignment}} {num_videos:>{val_alignment}} {functions.duration_string(duration)}')
 
 

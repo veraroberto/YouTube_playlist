@@ -1,14 +1,13 @@
 import pyperclip, string, itertools, unicodedata, requests
 
 def choose_option(options, message="Enter your choice: "):
-    pyperclip.copy('')
-    
-    # 1. Generate Excel-style labels (a, b... z, aa, ab...)
+        
+    # 1. Generate Excel-style labels (A, B... Z, AA, AB...)
     def get_labels(count):
         labels = []
         n = 1
         while len(labels) < count:
-            # Generate combinations of length n ('a', then 'aa', then 'aaa')
+            # Generate combinations of length n ('A', then 'AA', then 'AAA')
             for combo in itertools.product(string.ascii_uppercase, repeat=n):
                 labels.append("".join(combo))
                 if len(labels) == count:
@@ -21,19 +20,23 @@ def choose_option(options, message="Enter your choice: "):
     option_map = dict(zip(option_labels, options))
 
     while True:
-        print(message)
+        print(message.strip(':')+ " Or write EXIT to skip selection: ")
         for letter, option in option_map.items():
             print(f"  {letter}) {option}")
         choice = input("Enter your choice: ").strip().upper()
         # Check for user input or the pyperclip bypass
-        if choice in option_map or pyperclip.paste() == 'choose_option':
+        if choice in option_map:#pyperclip.paste() == 'choose_option':
             if pyperclip.paste() == 'choose_option':
                 print('There was no option chosen and the function was interrupted')
                 return None
             
             print(f"  {choice}) {option_map[choice]}")
             return option_map[choice]
+        elif choice.lower() == 'exit' or  choice == "":
+            print('No option was selected')
+            return
         else:
+
             print("Invalid choice. Please try again.\n")
 
 def remove_accents(text: str) -> str:
@@ -42,3 +45,7 @@ def remove_accents(text: str) -> str:
     # Filter out the diacritic marks
     without_accents = ''.join(c for c in normalized if unicodedata.category(c) != 'Mn')
     return without_accents
+
+if __name__ == '__main__':
+    choice = choose_option([True, False], message="Enter the choice:")
+    print(choice is None)

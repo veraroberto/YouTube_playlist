@@ -1,5 +1,4 @@
 from pathlib import Path
-from IPython.display import clear_output  # optional, can remove later
 from urllib.parse import urlparse, parse_qs
 
 def get_video_id(url):
@@ -9,8 +8,6 @@ def get_video_id(url):
     parsed = urlparse(url)
     query = parse_qs(parsed.query)
     return query.get("v", [0])[0]  # default to 0 if missing
-
-
 
 def add_video_manually(YouTubeManager, filesManager, url):
     if url is None:
@@ -33,8 +30,8 @@ def add_video_manually(YouTubeManager, filesManager, url):
         print(handle_file_path)
         filesManager.add_element_to_file(handle_file_path, video_id, True, True)
     else:
-        clear_output(wait=False)
-        print('The file handle does not exists')
+        
+        print(f'The file handle {handle_file_path.stem} does not exists')
 
 def manage_exceptions(filesManager, app):
     options = [file for file in filesManager.exception_folder.iterdir() if file.suffix == '.txt']

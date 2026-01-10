@@ -180,7 +180,6 @@ class filesManager:
                 # If we've already found everything, stop reading files
                 if not remaining_to_find:
                     break
-                    
                 try:
                     # Read file and get unique words/elements
                     content = file_path.read_text(encoding='utf-8', errors='ignore')
@@ -196,4 +195,13 @@ class filesManager:
         # Convert back to list or return as set
         return list(remaining_to_find)
 
-    
+if __name__ == "__main__":
+    fm = filesManager()
+    df = pd.read_csv(fm.file_path_yt_creators)
+
+
+
+
+  
+
+

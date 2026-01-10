@@ -2,14 +2,14 @@ from filesManager import filesManager
 
 import pyperclip, string, itertools, unicodedata, requests
 import pandas as pd
-from IPython.display import clear_output
+
 
 class app():
     def __init__(self,):
         self.files_manager = filesManager()
 
     def choose_option(self, options, message="Enter your choice: "):
-        pyperclip.copy('')
+        #pyperclip.copy('')
         
         # 1. Generate Excel-style labels (a, b... z, aa, ab...)
         def get_labels(count):
@@ -58,12 +58,11 @@ class app():
         
         if search_handles == search_options[0]:
             YT_content_creators_iter = YT_content_creators
-            clear_output(wait=False)
+            
         elif search_handles == search_options[1]:
             YT_content_creators_iter = YT_content_creators[YT_content_creators['uploadsID'].str.startswith('PL')].reset_index(drop=True)
-            clear_output(wait=False)
+            
         elif search_handles == search_options[2] or search_handles == search_options[3]:
-            clear_output(wait=False)
             if search_handles == search_options[2]:
                 message = 'Handles from Playlist to be incluede in the Data Frame'
                 message_2 = "Playlist that would be in the Data Frame"
@@ -80,7 +79,6 @@ class app():
             while True:
                 continue_adding = self.choose_option([True, False], "Add more Playlist into the filter:")
                 if continue_adding:
-                    clear_output(wait=False) 
                     playlist_to_search = self.choose_option(youtube_names_iter, 'Paylist to search new Handles')
                     youtube_names_iter.pop(youtube_names_iter.index(playlist_to_search))
                     file_path = playlist_folder / f'{playlist_to_search.replace(" ", "_")}.txt'
@@ -88,7 +86,6 @@ class app():
                     playlist_choosen.append(playlist_to_search)
                 else:
                     break
-            clear_output(wait=False)
             print(f'{message_2}: {", ".join(playlist_choosen)}')
             if search_handles == search_options[2]:
                 YT_content_creators_iter = YT_content_creators[YT_content_creators['Handle'].isin(handles_filter)].reset_index(drop=True)
@@ -96,17 +93,12 @@ class app():
                 YT_content_creators_iter = YT_content_creators[~YT_content_creators['Handle'].isin(handles_filter)].reset_index(drop=True)                
 
         elif search_handles == search_options[4]:
-            clear_output(wait=False)
             handles_filter = []
             while True:
-                if self.choose_option([True, False], "Add Handles into the new DataFrame:"):
-                    clear_output(wait=False)
-                    handles_to_search = input('New video in Handle: ').strip().lower()
-                    handles_filter.append(handles_to_search)
-                    print(f'Handles to be include in the DataFrame: {", ".join(handles_filter)}')
-                else:
-                    clear_output(wait=False)
-                    print(f'Handles to be include in the DataFrame: {", ".join(handles_filter)}')
+                handles_to_search = input('New videos in the Handle: ').strip().lower()
+                handles_filter.append(handles_to_search)
+                if not self.choose_option([True, False], "Add Handles into the new DataFrame:"):
+                    print(f'Handles to be include in the DataFrame: {", ".join(sorted(handles_filter))}')
                     break
             YT_content_creators_iter = YT_content_creators[YT_content_creators['Handle'].isin(handles_filter)].reset_index(drop=True)
         elif search_handles == search_options[5]:
