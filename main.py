@@ -217,10 +217,12 @@ def main():
 
         for index, video_id in enumerate(videos_ids,):
             if video_id not in handle_ids: #or video_id not in all_ids_from_playlist:
+                response_i = time.time()
                 response = yt.get_response_video_id(video_id)
                 video_id_info = response_mnr.get_video_info(response)
                 video_id_info['file_path'] = file_path
                 video_id_info['response'] = response
+
                 if not video_id_info:
                     continue            
                 elif video_id_info['liveBroadcastContent'] == 'upcoming' or  video_id_info['duration'] == 0:
@@ -349,8 +351,6 @@ def main():
             bold_key = f"\033[1;4m{playlist}:\033[0m" 
             extra_alignment = len(bold_key) - len(ansi_pattern.sub('', bold_key)) + 1
             print(f'{bold_key:<{alignment + extra_alignment}} {num_videos:>{val_alignment}} {functions.duration_string(duration)}')
-
-
 
 
 

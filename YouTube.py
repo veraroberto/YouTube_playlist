@@ -232,15 +232,10 @@ if __name__ =='__main__':
     uploadId = "UU7LMKjP8uqyRIjJGr44SY4A"
     fm = filesManager()
     yt = YouTubeManager()
-    file_path = fm.content_creator_folder / 'aagulla.txt'
-    video_ids = fm.get_elements_from_file(file_path, create_file=False)
-    playlist = yt.get_all_playlists()
-    print(playlist)
-    new_uploads = yt.get_all_ids_playlist(uploadId, 1)
+    video_id = 'TNxiFasTFAo'
+    response = yt.get_response_video_id(video_id)
+    print(response)
 
-    for video_id in new_uploads:
-        if video_id not in video_ids:
-            print(video_id)
 
 
 
