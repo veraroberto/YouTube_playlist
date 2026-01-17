@@ -158,8 +158,8 @@ def main():
             continue
         snippet = items[0].get('snippet', {})
         channelId = snippet.get('channelId', "")
-        if channelId in files_manager.YT_content_creators['channelID'].values:
-            handle = files_manager.YT_content_creators[files_manager.YT_content_creators['channelID'] == channelId]['Handle'].iloc[0]
+        if channelId in files_manager.YT_content_creators['channelId'].values:
+            handle = files_manager.YT_content_creators[files_manager.YT_content_creators['channelId'] == channelId]['Handle'].iloc[0]
             handle_path = files_manager.content_creator_folder / f'{handle}.txt'
             files_manager.add_element_to_file(handle_path, video_id, sort_list = False, print_statement = True)
             manually_added[handle].append(response)
@@ -203,7 +203,7 @@ def main():
         #     break
         handle = row.Handle
         channelName = row.channelName
-        channelID = row.channelID
+        channelId = row.channelId
         uploadsID = row.uploadsID
 
         print(" "*len(message), end='\r')
@@ -217,7 +217,6 @@ def main():
 
         for index, video_id in enumerate(videos_ids,):
             if video_id not in handle_ids: #or video_id not in all_ids_from_playlist:
-                response_i = time.time()
                 response = yt.get_response_video_id(video_id)
                 video_id_info = response_mnr.get_video_info(response)
                 video_id_info['file_path'] = file_path
@@ -346,11 +345,14 @@ def main():
 
         val_alignment = 2
         for playlist in sorted_keys:
-            duration = sum(video['duration'] for video in not_added_videos[playlist])
-            num_videos = len(not_added_videos[playlist])
-            bold_key = f"\033[1;4m{playlist}:\033[0m" 
-            extra_alignment = len(bold_key) - len(ansi_pattern.sub('', bold_key)) + 1
-            print(f'{bold_key:<{alignment + extra_alignment}} {num_videos:>{val_alignment}} {functions.duration_string(duration)}')
+            print(f'{playlist}:')
+            responses = sorted(not_added_videos[playlist], key= lambda x: x['publishedAt'])
+            for index, response in enumerate(responses):
+                video_id = response['video_id']
+                print(f'\t{index:02d}{yt_url}{video_id}')
+
+            print('*'*50)
+
 
 
 

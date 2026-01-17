@@ -25,29 +25,7 @@ class YouTubeManager:
     default_date = "2005-04-24T03:31:52Z" #Timestamp of the first YouTube video ever published 
     quota_limit = 9900 # I set at this value since sometime the API doesn't allow for more request when you are to close to the limit.
     
-    """ 
-    def _authenticate(self):
-        #Internal method to handle authentication logic
-        SCOPES = ["https://www.googleapis.com/auth/youtube"]
-        creds = None
-        token_file = self.tokens_folder / "token.pickle"
-        credentials_json = self.tokens_folder / 'credentials.json'
 
-        if token_file.is_file():
-            with open(str(token_file), "rb") as token:
-                creds = pickle.load(token)
-
-        if not creds or not creds.valid:
-            if creds and creds.expired and creds.refresh_token:
-                creds.refresh(Request())
-            else:
-                flow = InstalledAppFlow.from_client_secrets_file(str(credentials_json), SCOPES)
-                creds = flow.run_local_server(port=0)
-            with open(str(token_file), "wb") as token:
-                pickle.dump(creds, token)
-
-        return build("youtube", "v3", credentials=creds)
-    """
     def _authenticate(self):
         SCOPES = ["https://www.googleapis.com/auth/youtube"]
         token_file = self.tokens_folder / "token.pickle"
@@ -215,6 +193,44 @@ class YouTubeManager:
             print(f"An error occurred while adding {video_id} in the Playlist {playlist_id}: {e}")
             return None
         
+    def delelte_video_id_from_playlist(self, playlist_id, video_id_to_delete, print_message = True):
+        items_per_page = 50
+        # --- Step 1: Find the playlistItemId that matches the videoId ---
+        page_token = None
+        playlist_item_id = None
+
+        while True:
+            response = self.youtube.playlistItems().list(
+                part="id,snippet",
+                playlistId=playlist_id,
+                maxResults=50,
+                pageToken=page_token
+            ).execute()
+            self.files_manager.add_to_today_quota(1)
+            for item in response["items"]:
+                video_id = item["snippet"]["resourceId"]["videoId"]
+                if video_id == video_id_to_delete:
+                    playlist_item_id = item["id"]
+                    if print_message:
+                        print(f"\t🎯 Video ID {video_id_to_delete} found in the playlist")
+                    break
+
+            if playlist_item_id or "nextPageToken" not in response:
+                break
+
+            page_token = response["nextPageToken"]
+
+        # --- Step 2: Delete the video from the playlist ---
+        if playlist_item_id:
+            self.youtube.playlistItems().delete(id=playlist_item_id).execute()
+            self.files_manager.add_to_today_quota(50)
+            if print_message:
+                print(f"\t✅ Video deleted from playlist. Video ID: {video_id_to_delete}")
+            return response
+        else:
+            print("⚠️ Video not found in playlist.")
+            return None
+   
     def get_response_channel_by_handle(self, handle):
         handle = "@" + handle.replace('@', "")
         url = f"https://youtube.googleapis.com/youtube/v3/channels?forHandle={handle}&part=snippet,statistics,contentDetails&key={api_key}"
@@ -226,16 +242,17 @@ class YouTubeManager:
         uploads = data['items'][0]['contentDetails']['relatedPlaylists']['uploads']
         return channelId, channelTitle, uploads
 
-
 if __name__ =='__main__':
     # ,Andres Agulla,UC7LMKjP8uqyRIjJGr44SY4A,UU7LMKjP8uqyRIjJGr44SY4A
     uploadId = "UU7LMKjP8uqyRIjJGr44SY4A"
     fm = filesManager()
     yt = YouTubeManager()
-    video_id = 'TNxiFasTFAo'
-    response = yt.get_response_video_id(video_id)
-    print(response)
-
+    # video_id = 'TNxiFasTFAo'
+    # response = yt.get_response_video_id(video_id)
+    # print(response)
+    playlist_id = 'PLpLSuxy9E5PzNvAb0gNHPVYze8hJWdzmQ'
+    video_id_to_delete = 'sQl299HUN84'
+    yt.delelte_video_id_from_playlist(video_id_to_delete, playlist_id, print_message = True)
 
 
 

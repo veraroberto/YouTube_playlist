@@ -10,8 +10,9 @@ class response_manager():
     def __init__(self):
         self.files_manager = filesManager()
         self.youtube = YouTubeManager()
-        self.data = json.load(urlopen('https://ipinfo.io/'))
-        self.current_country = self.data.get('country')
+        # self.data = json.load(urlopen('https://ipinfo.io/'))
+        # self.current_country = self.data.get('country')
+        self.current_country = "MX"
         
     def get_video_info(self, response):
         items = response.get('items', [])
@@ -23,7 +24,7 @@ class response_manager():
         publishedAt = snippet.get('publishedAt', self.default_date)  #Timestamp of the first YouTube video ever published 
         title = snippet.get('title', "")
         channelTitle = snippet.get('channelTitle',"")
-        
+        channelId = snippet.get('channelId', "")
         contentDetails = items[0].get('contentDetails', {})
         regionRestriction = contentDetails.get('regionRestriction',{})
         restriction = regionRestriction.get('blocked', [])
@@ -34,6 +35,7 @@ class response_manager():
         liveStreamingDetails = items[0].get('liveStreamingDetails', None)
         video_id_info = {'video_id': video_id,
                          'channelTitle': channelTitle,
+                         'channelId': channelId,
                          'publishedAt': publishedAt,
                          'title': title,
                          'duration' : duration,
@@ -88,5 +90,12 @@ class response_manager():
         self.files_manager.write_csv_safely(df, file_path)
 
 if __name__ == '__main__':
+    video_id = 'dMMHSXn9pow'
     response_mng = response_manager()
+    yt = YouTubeManager()
+    response = yt.get_response_video_id(video_id)
+    items = response.get('items', [])
+    snippet = items[0].get('snippet', {})
+    contentDetails = items[0].get('contentDetails', {})
+    print(snippet['channelId'])
  

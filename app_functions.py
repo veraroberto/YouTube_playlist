@@ -20,7 +20,7 @@ def choose_option(options, message="Enter your choice: "):
     option_map = dict(zip(option_labels, options))
 
     while True:
-        print(message.strip(':')+ " Or write EXIT to skip selection: ")
+        print(message.strip())
         for letter, option in option_map.items():
             print(f"  {letter}) {option}")
         choice = input("Enter your choice: ").strip().upper()
@@ -46,6 +46,21 @@ def remove_accents(text: str) -> str:
     without_accents = ''.join(c for c in normalized if unicodedata.category(c) != 'Mn')
     return without_accents
 
+def duration_string(duration):
+    #Duration in seconds
+    if isinstance(duration, (float, int)):
+        hrs, mins = divmod(duration, 3600)
+        mins, secs = divmod(mins, 60)
+        duration_string = f'{int(hrs):02d}:{int(mins):02d}:{int(secs):02d}'
+        return duration_string
+    else:
+        print(f'{duration} is not a number')
+
+
+
 if __name__ == '__main__':
-    choice = choose_option([True, False], message="Enter the choice:")
-    print(choice is None)
+    print(duration_string(1205))
+
+
+
+    pass
