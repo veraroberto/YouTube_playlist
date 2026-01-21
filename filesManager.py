@@ -129,14 +129,15 @@ class filesManager:
                     file_path.touch(exist_ok=True)
                 return []
             else:
-                # .read_text().splitlines() is safer than manual splitting
                 return file_path.read_text(encoding="utf-8").splitlines()
  
-    def add_list_to_file(self, file_path, list_elements, sort_list=True):
+    def add_list_to_file(self, file_path, list_elements, sort_list=True, create_file=False):
         file_path = Path(file_path).with_suffix('.txt')
-        if not file_path.exists():
+        if not file_path.exists() and not create_file:
             print('File does not exists')
             return
+  
+
         elements_file = self.get_elements_from_file(file_path)
         
         # Track if we actually added anything to avoid unnecessary disk writes

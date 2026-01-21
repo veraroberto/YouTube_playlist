@@ -9,6 +9,15 @@ def get_video_id(url):
     query = parse_qs(parsed.query)
     return query.get("v", [0])[0]  # default to 0 if missing
 
+def get_playlist_id(url):
+    #https://www.youtube.com/playlist?list=PLiNo79GXtxAs0UUxvNczk6lB9IoBsjgYO
+    if 'https://www.youtube.com/playlist?list' not in url:
+        return url
+
+    parsed = urlparse(url)
+    query = parse_qs(parsed.query)
+    return query.get("list", [0])[0]  # default to 0 if missing
+
 def add_video_manually(YouTubeManager, filesManager, url):
     if url is None:
         video_id = get_video_id(input('Video ID to add a file: '))
@@ -50,11 +59,6 @@ def manage_exceptions(filesManager, app):
 
 
 if __name__ == "__main__":
-    from filesManager import filesManager
-    from app import app
-#    fm = filesManager()
-#    fncs = app()
-
-#    manage_exceptions(fm, fncs)
-    url = "https://www.youtube.com/watch?v=lGDwDmw_ObU&list=TLPQMDcwMTIwMjanNHQ3JhjtYQ&index=2"
-    print(get_video_id(url))
+    url = 'PLiNo79GXtxAs0UUxvNczk6lB9IoBsjgYO'
+    playlist_id = get_playlist_id(url)
+    print(playlist_id)

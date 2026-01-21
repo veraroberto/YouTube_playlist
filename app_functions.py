@@ -1,4 +1,5 @@
 import pyperclip, string, itertools, unicodedata, requests
+from urllib.parse import urlparse, parse_qs
 
 def choose_option(options, message="Enter your choice: "):
         
@@ -58,8 +59,10 @@ def duration_string(duration):
 
 
 
+
 if __name__ == '__main__':
-    print(duration_string(1205))
+    
+
 
 
 

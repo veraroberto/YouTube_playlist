@@ -237,22 +237,26 @@ class YouTubeManager:
         response = requests.get(url)
         self.files_manager.add_to_today_quota(1)
         data = response.json()
-        channelId = data['items'][0]['id']
-        channelTitle = data['items'][0]['snippet']['title']
-        uploads = data['items'][0]['contentDetails']['relatedPlaylists']['uploads']
-        return channelId, channelTitle, uploads
+        return data
+        # items = data.get('items', {})
+        # if not items:
+        #     print('There is no')
+        # channelId = data['items'][0]['id']
+        # channelTitle = data['items'][0]['snippet']['title']
+        # uploads = data['items'][0]['contentDetails']['relatedPlaylists']['uploads']
+        # return channelId, channelTitle, uploads
+
+    def get_response_from_playlist_id(self, playlist_id):
+        response = self.youtube.playlists().list(
+            part="snippet,contentDetails,id",
+            id=playlist_id).execute()
+
+        self.files_manager.add_to_today_quota(1)
+        return response
 
 if __name__ =='__main__':
-    # ,Andres Agulla,UC7LMKjP8uqyRIjJGr44SY4A,UU7LMKjP8uqyRIjJGr44SY4A
-    uploadId = "UU7LMKjP8uqyRIjJGr44SY4A"
-    fm = filesManager()
-    yt = YouTubeManager()
-    # video_id = 'TNxiFasTFAo'
-    # response = yt.get_response_video_id(video_id)
-    # print(response)
-    playlist_id = 'PLpLSuxy9E5PzNvAb0gNHPVYze8hJWdzmQ'
-    video_id_to_delete = 'sQl299HUN84'
-    yt.delelte_video_id_from_playlist(video_id_to_delete, playlist_id, print_message = True)
+    pass
+
 
 
 

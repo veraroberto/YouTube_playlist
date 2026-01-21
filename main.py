@@ -285,7 +285,7 @@ def main():
             was_braked = True
             # break
         if new_video_ids:
-            if not playlist_id:
+            if not playlist_id and not was_braked:
                 response_playlist = yt.create_private_playlist(playlist, playlist)
                 playlist_id = response_playlist.get('id', "")
                 youtube_playlists[playlist]["Playlist_ID"] = playlist_id
@@ -347,9 +347,9 @@ def main():
         for playlist in sorted_keys:
             print(f'{playlist}:')
             responses = sorted(not_added_videos[playlist], key= lambda x: x['publishedAt'])
-            for index, response in enumerate(responses):
+            for index, response in enumerate(responses, 1):
                 video_id = response['video_id']
-                print(f'\t{index:02d}{yt_url}{video_id}')
+                print(f'\t{index:02d} {yt_url}{video_id}')
 
             print('*'*50)
 

@@ -45,6 +45,66 @@ class response_manager():
                         }
         return video_id_info
 
+    def get_channel_info(self, channel_response):
+        items = channel_response.get('items', {})
+        if not items:
+            print("The Channel Doesn't have information ")
+            return
+        channelId = items[0].get('id', "")
+        snippet = items[0].get('snippet', {})
+        if not snippet:
+            print('There is no snippet in the channel')
+            return
+        contentDetails = items[0].get('contentDetails', {})
+        if not contentDetails:
+            print('There is not contentDetails')
+            return
+        channelTitle = snippet.get('title', "")
+        relatedPlaylists = contentDetails.get('relatedPlaylists', {})
+        if not relatedPlaylists:
+            print('There is no relatedPlaylists')
+            return
+        
+        uploads = relatedPlaylists.get('uploads', None)
+        customUrl = snippet.get('customUrl', "").replace('@', "")
+
+
+        channel_info = {
+            'customUrl': customUrl,
+            'channelId': channelId,
+            'channelTitle': channelTitle,
+            'uploads': uploads,
+
+        }
+        return channel_info
+
+    def get_playlist_info(self, playlist_response):
+        items = playlist_response.get('items',{})
+        playlist_id = items[0].get('id','')
+        if not items:
+            print(f'There no items in the playlist')
+            return
+        snippet = items[0].get('snippet', {})
+        if not snippet:
+            print(f'There is no snippet in the Playlist Resposnse')
+            return
+        channelId = snippet.get('channelId',"")
+        title = snippet.get('title')
+        customUrl = title.lower().replace(' ', '_')
+        contentDetails = items[0].get('contentDetails',{})
+        if not contentDetails:
+            print('There is not contentDetails in the Playlist')
+            return
+        playlist_info = {
+            'customUrl': customUrl,
+            'channelId': channelId,
+            'channelTitle': title,
+            'uploads': playlist_id,
+            
+
+        }
+        return playlist_info
+
     def is_restricted(self, response):
         items = response.get('items', [])
         if not items:
@@ -90,12 +150,23 @@ class response_manager():
         self.files_manager.write_csv_safely(df, file_path)
 
 if __name__ == '__main__':
-    video_id = 'dMMHSXn9pow'
-    response_mng = response_manager()
+    # video_id = 'dMMHSXn9pow'
     yt = YouTubeManager()
-    response = yt.get_response_video_id(video_id)
-    items = response.get('items', [])
-    snippet = items[0].get('snippet', {})
-    contentDetails = items[0].get('contentDetails', {})
-    print(snippet['channelId'])
- 
+    response_mn =  response_manager()
+
+
+    # channelId = 'UCuPivVjnfNo4mb3Oog_frZg'
+    # channel_response = yt.get_channel_response(channelId)
+    # # print(channel_response)
+    # handle = 'AlAireCon'.lower()
+    # channel_response =  yt.get_response_channel_by_handle(handle)
+    
+    # channel_info = response_mn.get_channel_info(channel_response)
+    # print(channel_info)
+
+    playlist_id = "PLiNo79GXtxAs0UUxvNczk6lB9IoBsjgYO"
+    playlist_response = yt.get_response_from_playlist_id(playlist_id)
+    
+    playlist_info = response_mn.get_playlist_info(playlist_response)
+    print(playlist_id)
+    print(playlist_info)
