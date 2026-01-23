@@ -2,10 +2,9 @@ import argparse
 from YouTube import YouTubeManager
 from filesManager import filesManager
 from paths import content_creator_folder, exception_folder, playlist_folder,restriction_folder
-from app import app
+# from app import app
 from response import response_manager
-from manage_video_ids import add_video_manually, manage_exceptions
-from df_manager import df_manager
+
 
 # from itertools import count
 from pathlib import Path
@@ -15,7 +14,13 @@ from collections import defaultdict
 
 import time, re, pyperclip
 
-from app_functions import choose_option
+from app_functions import (choose_option,
+                           clear_terminal,
+                           remove_accents,
+                           duration_string,
+                           is_short)
+from manage_video_ids import add_video_manually, manage_exceptions
+from df_manager import df_manager
 
 def main():
 
@@ -44,9 +49,9 @@ def main():
 
     files_manager = filesManager()
     yt = YouTubeManager()
-    functions = app()
+    # functions = app()
     response_mnr = response_manager()
-
+    df_mnr = df_manager()
 
     if args.command == 'quota':
         files_manager = filesManager()
@@ -61,6 +66,7 @@ def main():
                             )
             if not choose_option([True, False], message="Add another video ID: "):
                 break
+        clear_terminal()
         return
     
     elif args.command == 'add-list-videos':
@@ -74,7 +80,7 @@ def main():
         return
 
     elif args.command == "add-exception":
-        manage_exceptions(files_manager, functions)
+        manage_exceptions(files_manager)
         return  
 
     elif args.command == "not-add-videos":
@@ -82,17 +88,17 @@ def main():
         print("No video will be added to the Playlist")
 
     elif args.command == "manage-df":
-        df = df_manager()
-        functions = {
-            'Delete Information from files': df.delete_information_in_files, 
-            'Add new row to the Data Frame': df.add_row_df
+        
+        functions_dict = {
+            'Delete Information from files': df_mnr.delete_information_in_files, 
+            'Add new row to the Data Frame': df_mnr.add_row_df
         }
-        function = choose_option(list(functions.keys()),'Choose a Function')
-        functions[function]()
+        function = choose_option(list(functions_dict.keys()),'Choose a Function: ')
+        functions_dict[function]()
         return
 
 
-    YT_content_creators_iter = functions.get_df_to_iterate(playlist_folder, files_manager.YT_content_creators)
+    YT_content_creators_iter = df_mnr.get_df_to_iterate(playlist_folder, files_manager.YT_content_creators)
     if YT_content_creators_iter is None:
         print("Doing Nothing")
         return
@@ -216,7 +222,7 @@ def main():
         handle = row.Handle
         channelName = row.channelName
         channelId = row.channelId
-        uploadsID = row.uploadsID
+        uploadsID = row.uploads
 
         print(" "*len(message), end='\r')
         message = f'{row.Index + 1:0{digits}d} / {num_rows}: {channelName}'
@@ -246,15 +252,14 @@ def main():
                     files_manager.add_element_to_file(file_path,video_id, False)
                     liveStream.append(video_id)  
                 
-                elif (handle in only_long_videos and duration < 35*60) or \
-                any(functions.remove_accents(t.lower()) in functions.remove_accents(video_id_info["title"].lower()) for t in titles_list) or \
+                elif (handle in only_long_videos and video_id_info['duration'] < 35*60) or \
+                any(remove_accents(t.lower()) in remove_accents(video_id_info["title"].lower()) for t in titles_list) or \
                 (handle in skip_long_videos and video_id_info['duration'] >= 60*60) or video_id_info['duration'] >= 60*60*3:
                     files_manager.add_element_to_file(file_path,video_id, False)
                 else:
-                    short = functions.is_short(video_id)
+                    short = is_short(video_id)
                     if short is None:
                         was_braked = True
-                        # break
                     elif short is True:
                         if handle in WL_shorts:
                             youtube_playlists[WL_shorts_playlist]['new_video_ids'].append(video_id_info)
@@ -271,10 +276,10 @@ def main():
             # break                 
     
     print(" "*len(message), end='\r')
-    print(f'Duration to getting the new IDs => {functions.duration_string(time.time() - start)}')
+    print(f'Duration to getting the new IDs => {duration_string(time.time() - start)}')
     if not was_braked:
         total_duration = sum(video_id['duration'] for playlist in youtube_playlists for video_id in youtube_playlists[playlist]['new_video_ids'])
-        print(f"Duration of all the new Video IDs => {functions.duration_string(total_duration)}")
+        print(f"Duration of all the new Video IDs => {duration_string(total_duration)}")
 
         total_videos = sum(len(youtube_playlists[playlist]['new_video_ids']) for playlist in youtube_playlists)
         print(f'There are {total_videos} total videos to add')
@@ -347,7 +352,7 @@ def main():
             num_videos = len(added_videos[playlist])
             bold_key = f"\033[1;4m{playlist}:\033[0m" 
             extra_alignment = len(bold_key) - len(ansi_pattern.sub('', bold_key)) + 1
-            print(f'{bold_key:<{alignment + extra_alignment}} {num_videos:>{val_alignment}} {functions.duration_string(duration)}')
+            print(f'{bold_key:<{alignment + extra_alignment}} {num_videos:>{val_alignment}} {duration_string(duration)}')
 
     if not_added_videos:
         print("Videos that were not added to any playlist")

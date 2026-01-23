@@ -2,7 +2,8 @@ from YouTube import YouTubeManager
 from response import response_manager
 from filesManager import filesManager
 
-from app_functions import choose_option, duration_string
+from app_functions import (choose_option,
+                           duration_string)
 
 
 from collections import defaultdict
@@ -18,7 +19,7 @@ class PlaylistManager():
         self.df = self.files_manager.YT_content_creators
         self.playlist_names =self.yt.get_all_playlists()
         
-    def move_video_to_playlist(self):
+    def move_video_to_playlist(self) -> None:
         quota_limit = 8000
         playlist_handles = defaultdict(list)   
         playlist_choosen = choose_option(self.playlist_names, "Choose Origin Playlist")

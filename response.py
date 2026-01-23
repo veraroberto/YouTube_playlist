@@ -1,12 +1,12 @@
-import isodate, json
+import isodate
 import pandas as pd
 from filesManager import filesManager
 from YouTube import YouTubeManager
-from urllib.request import urlopen
+from pathlib import Path
+# from urllib.request import urlopen
 
+default_date = "2005-04-24T03:31:52Z" #Timestamp of the first YouTube video ever published 
 class response_manager():
-    default_date = "2005-04-24T03:31:52Z" #Timestamp of the first YouTube video ever published 
-
     def __init__(self):
         self.files_manager = filesManager()
         self.youtube = YouTubeManager()
@@ -14,14 +14,14 @@ class response_manager():
         # self.current_country = self.data.get('country')
         self.current_country = "MX"
         
-    def get_video_info(self, response):
+    def get_video_info(self, response:  dict) -> dict:
         items = response.get('items', [])
         if not items:
             return {}
         video_id = response['items'][0]['id']
         
         snippet = items[0].get('snippet', {})
-        publishedAt = snippet.get('publishedAt', self.default_date)  #Timestamp of the first YouTube video ever published 
+        publishedAt = snippet.get('publishedAt', default_date)  #Timestamp of the first YouTube video ever published 
         title = snippet.get('title', "")
         channelTitle = snippet.get('channelTitle',"")
         channelId = snippet.get('channelId', "")
@@ -45,7 +45,7 @@ class response_manager():
                         }
         return video_id_info
 
-    def get_channel_info(self, channel_response):
+    def get_channel_info(self, channel_response: dict) -> dict:
         items = channel_response.get('items', {})
         if not items:
             print("The Channel Doesn't have information ")
@@ -78,7 +78,7 @@ class response_manager():
         }
         return channel_info
 
-    def get_playlist_info(self, playlist_response):
+    def get_playlist_info(self, playlist_response: dict) -> dict:
         items = playlist_response.get('items',{})
         playlist_id = items[0].get('id','')
         if not items:
@@ -105,7 +105,7 @@ class response_manager():
         }
         return playlist_info
 
-    def is_restricted(self, response):
+    def is_restricted(self, response: dict) -> None | dict:
         items = response.get('items', [])
         if not items:
             print('There is no items response')
@@ -118,7 +118,7 @@ class response_manager():
             if self.current_country in blocked or (allowed and self.current_country not in allowed):
                 return regionRestriction
 
-    def add_response_df(self, file_path, response):    
+    def add_response_df(self, file_path: Path, response: dict) -> None:    
         columns_df = ['videoID','title', 'publishedAt', 'restriction']
         if not file_path.exists():
             df = pd.DataFrame(columns = columns_df)

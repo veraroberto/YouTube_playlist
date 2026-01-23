@@ -3,8 +3,14 @@ from datetime import datetime, timedelta
 from zoneinfo import ZoneInfo 
 from pathlib import Path
 
-from paths import content_creator_folder, content_creator_folder_response, exception_folder,playlist_folder,restriction_folder, stats_folder, tokens_folder
-from paths import columns_df
+from paths import (content_creator_folder,
+                   content_creator_folder_response,
+                   exception_folder,
+                   playlist_folder,
+                   restriction_folder,
+                   stats_folder,
+                   tokens_folder,
+                   columns_df)
 
 class filesManager:   
     def __init__(self):
@@ -44,12 +50,11 @@ class filesManager:
         else:
             self.YT_content_creators = pd.DataFrame(columns=columns_df)          
         
-
-    def write_csv_safely(self, df, filename):
+    def write_csv_safely(self, df: pd.DataFrame, filename: Path) -> None:
         with open(filename, 'w', newline='', encoding='utf-8') as f:
             df.to_csv(f, index=False, date_format="%Y-%b-%d")
 
-    def add_to_today_quota(self, new_quota):
+    def add_to_today_quota(self, new_quota: int) -> None:
         pst_time = datetime.now(ZoneInfo("America/Los_Angeles")) #The quoatas counter is restarted every day a midnight in this time zone
         today_str = pst_time.strftime('%Y-%b-%d')
     
@@ -87,7 +92,7 @@ class filesManager:
         df['Quota'] = df['Quota'].astype(int)
         self.write_csv_safely(df, self.quota_filename)
 
-    def get_today_quota(self, print_statement = False):    
+    def get_today_quota(self, print_statement: bool = False) -> int:    
         pst_time = datetime.now(ZoneInfo("America/Los_Angeles"))
         today_str = pst_time.strftime('%Y-%b-%d')
         # If file doesn't exist, create it with headers
@@ -117,7 +122,7 @@ class filesManager:
             print(f'The current quota usage is 0')
             return 0
 
-    def get_elements_from_file(self, file_path, create_file=True):
+    def get_elements_from_file(self, file_path: Path, create_file: bool = True):
             file_path = Path(file_path).with_suffix('.txt')
             if not file_path.exists():
                 if create_file:
@@ -126,7 +131,8 @@ class filesManager:
             else:
                 return file_path.read_text(encoding="utf-8").splitlines()
  
-    def add_list_to_file(self, file_path, list_elements, sort_list=True, create_file=False):
+    def add_list_to_file(self, file_path: Path, list_elements: list,
+                         sort_list: bool =True, create_file=False) -> None:
         file_path = Path(file_path).with_suffix('.txt')
         if not file_path.exists() and not create_file:
             print('File does not exists')
@@ -155,7 +161,8 @@ class filesManager:
             
         return elements_file
 
-    def add_element_to_file(self, file_path, element, sort_list=True, print_statement=False):
+    def add_element_to_file(self, file_path: Path, element: str,
+                            sort_list: bool = True, print_statement: bool = False) -> None:
         file_path = Path(file_path).with_suffix('.txt')
         elements = self.get_elements_from_file(file_path)
         
@@ -168,7 +175,7 @@ class filesManager:
         # If it's not in the list, use add_list_to_file to save it
         return self.add_list_to_file(file_path, [element], sort_list)
 
-    def find_missing_elements(self, search_list):
+    def find_missing_elements(self, search_list: list) -> list:
         # Convert to a set so we can remove items as we find them
         remaining_to_find = set(search_list)       
         for file_path in content_creator_folder.iterdir():
@@ -196,8 +203,15 @@ class filesManager:
 
 if __name__ == "__main__":
     fm = filesManager()
-
-
+    df= fm.YT_content_creators
+    handles = df['Handle'].values
+    for file in content_creator_folder.rglob('*.txt'):
+        if file.stem not in handles:
+            try:
+                file.unlink()
+                print(f'The file {file.name} was deleted')
+            except:
+                print(f'Unable to delete {file.name}')
 
 
 

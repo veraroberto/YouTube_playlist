@@ -1,8 +1,9 @@
 from pathlib import Path
 from urllib.parse import urlparse, parse_qs
-
+from app_functions import (choose_option)
 from paths import content_creator_folder
-def get_video_id(url):
+
+def get_video_id(url: str) -> str:
     url = url.strip().replace('https://www.youtube.com/shorts/', 'https://www.youtube.com/watch?v=')
     if 'https://www.youtube.com/watch?v=' not in url:
         return url
@@ -10,7 +11,7 @@ def get_video_id(url):
     query = parse_qs(parsed.query)
     return query.get("v", [0])[0]  # default to 0 if missing
 
-def get_playlist_id(url):
+def get_playlist_id(url: str) -> str:
     #https://www.youtube.com/playlist?list=PLiNo79GXtxAs0UUxvNczk6lB9IoBsjgYO
     if 'https://www.youtube.com/playlist?list' not in url:
         return url
@@ -19,7 +20,7 @@ def get_playlist_id(url):
     query = parse_qs(parsed.query)
     return query.get("list", [0])[0]  # default to 0 if missing
 
-def add_video_manually(YouTubeManager, filesManager, url):
+def add_video_manually(YouTubeManager: classmethod, filesManager: classmethod, url: str) -> None:
     if url is None:
         video_id = get_video_id(input('Video ID to add a file: '))
     else:
@@ -43,10 +44,10 @@ def add_video_manually(YouTubeManager, filesManager, url):
         
         print(f'The file handle {handle_file_path.stem} does not exists')
 
-def manage_exceptions(filesManager, app):
+def manage_exceptions(filesManager: classmethod) -> None:
     options = [file for file in filesManager.exception_folder.iterdir() if file.suffix == '.txt']
     options.append('New Exception File')
-    exception_file = app.choose_option(options, message="Choose the Exception to add: ")
+    exception_file = choose_option(options, message="Choose the Exception to add: ")
     if exception_file == options[-1]:
         new_file_name = input('New file:').strip()
         exception_file = filesManager.exception_folder / new_file_name
