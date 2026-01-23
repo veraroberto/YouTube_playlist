@@ -3,53 +3,48 @@ from datetime import datetime, timedelta
 from zoneinfo import ZoneInfo 
 from pathlib import Path
 
-class filesManager:
-    # 1. Store the paths
-    content_creator_folder = Path('Content Creators')
-    content_creator_folder_response = Path('Content Creators Response')
-    exception_folder = Path('Exceptions')
-    playlist_folder =  Path("Playlists")
-    restriction_folder = Path('Restrictions')
-    stats_folder = Path('Stats')
-    tokens_folder = Path("Tokens")
-   
+from paths import content_creator_folder, content_creator_folder_response, exception_folder,playlist_folder,restriction_folder, stats_folder, tokens_folder
+from paths import columns_df
+
+class filesManager:   
     def __init__(self):
-        if not self.content_creator_folder.exists():
-            self.content_creator_folder.mkdir(parents=True, exist_ok=True)
-            print(f'The folder {self.content_creator_folder.stem} was created')
+        if not content_creator_folder.exists():
+            content_creator_folder.mkdir(parents=True, exist_ok=True)
+            print(f'The folder {content_creator_folder.stem} was created')
 
-        if not self.content_creator_folder_response.exists():
-            self.content_creator_folder_response.mkdir(parents=True, exist_ok=True)
-            print(f'The folder {self.content_creator_folder_response.stem} was created')
+        if not content_creator_folder_response.exists():
+            content_creator_folder_response.mkdir(parents=True, exist_ok=True)
+            print(f'The folder {content_creator_folder_response.stem} was created')
 
-        if not self.exception_folder.exists():
-            self.exception_folder.mkdir(parents=True, exist_ok=True)
-            print(f'The folder {self.exception_folder.stem} was created')
+        if not exception_folder.exists():
+            exception_folder.mkdir(parents=True, exist_ok=True)
+            print(f'The folder {exception_folder.stem} was created')
 
-        if not self.playlist_folder.exists():
-            self.playlist_folder.mkdir(parents=True, exist_ok=True)
-            print(f'The folder {self.playlist_folder.stem} was created')
+        if not playlist_folder.exists():
+            playlist_folder.mkdir(parents=True, exist_ok=True)
+            print(f'The folder {playlist_folder.stem} was created')
 
-        if not self.restriction_folder.exists():
-            self.restriction_folder.mkdir(parents=True, exist_ok=True)
-            print(f'The folder {self.restriction_folder.stem} was created')
+        if not restriction_folder.exists():
+            restriction_folder.mkdir(parents=True, exist_ok=True)
+            print(f'The folder {restriction_folder.stem} was created')
 
-        if not self.stats_folder.exists():
-            self.stats_folder.mkdir(parents=True, exist_ok=True)
-            print(f'The folder {self.stats_folder.stem} was created')
+        if not stats_folder.exists():
+            stats_folder.mkdir(parents=True, exist_ok=True)
+            print(f'The folder {stats_folder.stem} was created')
 
-        if not self.tokens_folder.exists():
-            self.tokens_folder.mkdir(parents=True, exist_ok=True)
-            print(f'The folder {self.tokens_folder.stem} was created')
+        if not tokens_folder.exists():
+            tokens_folder.mkdir(parents=True, exist_ok=True)
+            print(f'The folder {tokens_folder.stem} was created')
             
-        self.quota_filename = self.stats_folder / 'Quota.csv'
-        self.file_path_yt_creators = self.stats_folder / 'YT_content_creators.csv'
+        self.quota_filename = stats_folder / 'Quota.csv'
+        self.file_path_yt_creators = stats_folder / 'YT_content_creators.csv'
 
         if self.file_path_yt_creators.exists():
             self.YT_content_creators = pd.read_csv(self.file_path_yt_creators)
         else:
-            self.YT_content_creators = pd.DataFrame(columns=['Handle', 'channelName', 'channelID', 'ploadsID'])          
+            self.YT_content_creators = pd.DataFrame(columns=columns_df)          
         
+
     def write_csv_safely(self, df, filename):
         with open(filename, 'w', newline='', encoding='utf-8') as f:
             df.to_csv(f, index=False, date_format="%Y-%b-%d")
@@ -176,7 +171,7 @@ class filesManager:
     def find_missing_elements(self, search_list):
         # Convert to a set so we can remove items as we find them
         remaining_to_find = set(search_list)       
-        for file_path in self.content_creator_folder.iterdir():
+        for file_path in content_creator_folder.iterdir():
             if file_path.suffix == '.txt':
                 # If we've already found everything, stop reading files
                 if not remaining_to_find:
@@ -196,9 +191,12 @@ class filesManager:
         # Convert back to list or return as set
         return list(remaining_to_find)
 
+
+
+
 if __name__ == "__main__":
     fm = filesManager()
-    df = pd.read_csv(fm.file_path_yt_creators)
+
 
 
 

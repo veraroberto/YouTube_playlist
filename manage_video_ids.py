@@ -1,6 +1,7 @@
 from pathlib import Path
 from urllib.parse import urlparse, parse_qs
 
+from paths import content_creator_folder
 def get_video_id(url):
     url = url.strip().replace('https://www.youtube.com/shorts/', 'https://www.youtube.com/watch?v=')
     if 'https://www.youtube.com/watch?v=' not in url:
@@ -34,7 +35,7 @@ def add_video_manually(YouTubeManager, filesManager, url):
     channelId = items[0]['snippet']['channelId']
     response_channel = YouTubeManager.get_channel_response(channelId)
     handle = response_channel['items'][0]['snippet']['customUrl'].replace('@', '')
-    handle_file_path = filesManager.content_creator_folder / f'{handle}.txt'
+    handle_file_path = content_creator_folder / f'{handle}.txt'
     if handle_file_path.exists():
         print(handle_file_path)
         filesManager.add_element_to_file(handle_file_path, video_id, True, True)

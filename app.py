@@ -115,6 +115,7 @@ class app():
             return duration_string
         else:
             print(f'{duration} is not a number')
+    
     def remove_accents(self, text: str) -> str:
         # Normalize the text to separate base letters and diacritics
         normalized = unicodedata.normalize('NFD', text)

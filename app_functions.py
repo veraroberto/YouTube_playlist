@@ -1,44 +1,73 @@
-import pyperclip, string, itertools, unicodedata, requests
+import unicodedata
 from urllib.parse import urlparse, parse_qs
 
-def choose_option(options, message="Enter your choice: "):
-        
-    # 1. Generate Excel-style labels (A, B... Z, AA, AB...)
-    def get_labels(count):
-        labels = []
-        n = 1
-        while len(labels) < count:
-            # Generate combinations of length n ('A', then 'AA', then 'AAA')
-            for combo in itertools.product(string.ascii_uppercase, repeat=n):
-                labels.append("".join(combo))
-                if len(labels) == count:
-                    break
-            n += 1
-        return labels
 
-    # 2. Map labels to options
-    option_labels = get_labels(len(options))
-    option_map = dict(zip(option_labels, options))
+def choose_option(options: list, message: str = "Enter your choice: ") -> str | None:
+    if not isinstance(options, list):
+        raise TypeError(f"Expected a list, but got {type(options).__name__}")
+    
+    if not options:
+        return None
 
-    while True:
-        print(message.strip())
-        for letter, option in option_map.items():
-            print(f"  {letter}) {option}")
-        choice = input("Enter your choice: ").strip().upper()
-        # Check for user input or the pyperclip bypass
-        if choice in option_map:#pyperclip.paste() == 'choose_option':
-            if pyperclip.paste() == 'choose_option':
-                print('There was no option chosen and the function was interrupted')
-                return None
+    # 1. Create the mapping using the math helper
+    option_map = {}
+    for i, value in enumerate(options, 1):
+            label = ""
+            n = i
+            while n > 0:
+                n, remainder = divmod(n - 1, 26)
+                label = chr(65 + remainder) + label
             
-            print(f"  {choice}) {option_map[choice]}")
-            return option_map[choice]
-        elif choice.lower() == 'exit' or  choice == "":
-            print('No option was selected')
-            return
-        else:
+            option_map[label] = value
+            print(f"[{label}] {value}")
 
-            print("Invalid choice. Please try again.\n")
+    # 2. Input Loop
+    while True:
+        choice = input(message).strip().upper()
+        
+        if not choice: # Handle empty Enter key
+            continue
+            
+        if choice in option_map:
+            return option_map[choice]
+            
+        print(f"Invalid choice '{choice}'. Please pick a label from the list.")
+
+# def choose_option(options: list, message: str = "Enter your choice: ") -> str | None:
+#     # PEP 8: Type check is good, but removed unreachable return
+#     if not isinstance(options, list):
+#         raise TypeError(f"Expected a list, but got {type(options).__name__}")
+    
+#     if not options:
+#         return None
+
+#     # Efficient Label Generation using a generator expression
+#     # This avoids creating a massive list in memory
+#     def generate_labels(count):
+#         n = 1
+#         found = 0
+#         while found < count:
+#             for combo in itertools.product(string.ascii_uppercase, repeat=n):
+#                 yield "".join(combo)
+#                 found += 1
+#                 if found == count:
+#                     return
+#             n += 1
+
+#     # Map labels to options using a dictionary comprehension
+#     option_map = dict(zip(generate_labels(len(options)), options))
+
+#     # Display options
+#     for label, value in option_map.items():
+#         print(f"[{label}] {value}")
+
+#     while True:
+#         choice = input(message).strip().upper()
+#         if choice in option_map:
+#             return option_map[choice]
+#         if choice == "EXIT": # Example exit condition
+#             return None
+#         print("Invalid choice. Please try again.")
 
 def remove_accents(text: str) -> str:
     # Normalize the text to separate base letters and diacritics
@@ -61,9 +90,8 @@ def duration_string(duration):
 
 
 if __name__ == '__main__':
-    
-
-
+    options = list(range(1,30))
+    print(ord('A'))
 
 
     pass

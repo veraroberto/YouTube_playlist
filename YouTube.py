@@ -8,16 +8,14 @@ import requests
 
 from filesManager import filesManager
 
-
+from paths import tokens_folder
 
 class YouTubeManager:
     yt_url = 'https://www.youtube.com/watch?v='
     def __init__(self):
         # 1. Store the paths
         self.files_manager = filesManager()
-        self.tokens_folder = self.files_manager.tokens_folder
-        
-
+ 
         # 2. Authenticate and store the 'youtube' client as 'self.youtube'
         self.youtube = self._authenticate()
         
@@ -28,8 +26,8 @@ class YouTubeManager:
 
     def _authenticate(self):
         SCOPES = ["https://www.googleapis.com/auth/youtube"]
-        token_file = self.tokens_folder / "token.pickle"
-        credentials_json = self.tokens_folder / "credentials.json"
+        token_file = tokens_folder / "token.pickle"
+        credentials_json = tokens_folder / "credentials.json"
 
         creds = None
 

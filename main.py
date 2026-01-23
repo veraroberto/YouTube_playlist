@@ -1,10 +1,11 @@
 import argparse
 from YouTube import YouTubeManager
 from filesManager import filesManager
+from paths import content_creator_folder, exception_folder, playlist_folder,restriction_folder
 from app import app
 from response import response_manager
 from manage_video_ids import add_video_manually, manage_exceptions
-
+from df_manager import df_manager
 
 # from itertools import count
 from pathlib import Path
@@ -36,8 +37,9 @@ def main():
     subparsers.add_parser("add-exception", help="Add an exception to a file")
     
     add_parser = subparsers.add_parser("not-add-videos", help="Do not add the Video to the Playlists")
-    # add_parser.add_argument("--video_id", required=False, help="Copies the URL from the clipboard")
-
+    
+    add_parser = subparsers.add_parser("manage-df", help="Add or Delete information to the DataFrame and files")
+    
     args = parser.parse_args()
 
     files_manager = filesManager()
@@ -79,8 +81,18 @@ def main():
         add_video_to_playlist = False
         print("No video will be added to the Playlist")
 
+    elif args.command == "manage-df":
+        df = df_manager()
+        functions = {
+            'Delete Information from files': df.delete_information_in_files, 
+            'Add new row to the Data Frame': df.add_row_df
+        }
+        function = choose_option(list(functions.keys()),'Choose a Function')
+        functions[function]()
+        return
 
-    YT_content_creators_iter = functions.get_df_to_iterate(files_manager.playlist_folder, files_manager.YT_content_creators)
+
+    YT_content_creators_iter = functions.get_df_to_iterate(playlist_folder, files_manager.YT_content_creators)
     if YT_content_creators_iter is None:
         print("Doing Nothing")
         return
@@ -89,7 +101,7 @@ def main():
 
     ## Creates the Dictionary of the Playlists
     playlist_names = yt.get_all_playlists()
-    youtube_names = [file.stem.replace('_', ' ').strip() for file in files_manager.playlist_folder.iterdir() if file.suffix == '.txt']
+    youtube_names = [file.stem.replace('_', ' ').strip() for file in playlist_folder.iterdir() if file.suffix == '.txt']
     youtube_playlists = defaultdict(lambda:
                                     {"Handles":[],
                                     "Playlist_ID": "",
@@ -101,13 +113,13 @@ def main():
     shorts_playlist_name = 'Shorts To Watch'
     other_playlist_name = 'Videos To Watch'
     WL_shorts_playlist = 'Watch Later Shorts'
-    vertical_video_id = files_manager.get_elements_from_file(files_manager.exception_folder / "vertical_video.txt", create_file=False)
+    vertical_video_id = files_manager.get_elements_from_file(exception_folder / "vertical_video.txt", create_file=False)
     special_playlist = [other_playlist_name, WL_shorts_playlist, shorts_playlist_name]
     # youtube_names.extend({'Path': None, 'Name': playlist} for playlist in special_playlist)
     youtube_names.extend(special_playlist)
 
     for playlist in youtube_names:
-        file_path = files_manager.playlist_folder / f'{playlist.replace(" ","_")}.txt'
+        file_path = playlist_folder / f'{playlist.replace(" ","_")}.txt'
         if file_path.exists():
             handles = file_path.read_text(encoding="utf-8").splitlines()
             youtube_playlists[playlist]['Handles'].extend(handles) 
@@ -125,22 +137,22 @@ def main():
 
 
     ## Exceptions
-    skip_handle_shorts_path = files_manager.exception_folder / 'skip_shorts_handle.txt'
+    skip_handle_shorts_path = exception_folder / 'skip_shorts_handle.txt'
     skip_shorts_handle = files_manager.get_elements_from_file(skip_handle_shorts_path)
 
-    skip_long_videos_60m_path = files_manager.exception_folder / 'skip_long_videos_60m.txt'
+    skip_long_videos_60m_path = exception_folder / 'skip_long_videos_60m.txt'
     skip_long_videos = files_manager.get_elements_from_file(skip_long_videos_60m_path, create_file = True)
 
-    skip_live_handle = files_manager.exception_folder /'skip_live_handle.txt'
+    skip_live_handle = exception_folder /'skip_live_handle.txt'
     skip_liveStreamingDetails_handle = files_manager.get_elements_from_file(skip_live_handle, create_file = True)
 
-    skip_title_path = files_manager.exception_folder /'skip_title.txt'
+    skip_title_path = exception_folder /'skip_title.txt'
     titles_list = files_manager.get_elements_from_file(skip_title_path, create_file = True)
 
-    only_add_long_videos_path = files_manager.exception_folder / 'only_add_long_videos.txt'
+    only_add_long_videos_path = exception_folder / 'only_add_long_videos.txt'
     only_long_videos = files_manager.get_elements_from_file(only_add_long_videos_path, create_file = True)
 
-    WL_shorts_path = files_manager.exception_folder / 'WL_shorts.txt'
+    WL_shorts_path = exception_folder / 'WL_shorts.txt'
     WL_shorts = files_manager.get_elements_from_file(WL_shorts_path, create_file = True)
 
     missing_video_ids = files_manager.find_missing_elements(all_ids_from_playlist)
@@ -160,7 +172,7 @@ def main():
         channelId = snippet.get('channelId', "")
         if channelId in files_manager.YT_content_creators['channelId'].values:
             handle = files_manager.YT_content_creators[files_manager.YT_content_creators['channelId'] == channelId]['Handle'].iloc[0]
-            handle_path = files_manager.content_creator_folder / f'{handle}.txt'
+            handle_path = content_creator_folder / f'{handle}.txt'
             files_manager.add_element_to_file(handle_path, video_id, sort_list = False, print_statement = True)
             manually_added[handle].append(response)
             saved_quota += 49
@@ -211,7 +223,7 @@ def main():
         print(message, end='\r')
         videos_ids = yt.get_all_ids_playlist(uploadsID, 1)
         videos_ids.reverse()
-        file_path = files_manager.content_creator_folder / f'{handle}.txt'
+        file_path = content_creator_folder / f'{handle}.txt'
         handle_ids = files_manager.get_elements_from_file(file_path, create_file = True)
         playlist_key = next((key for key, handles in youtube_playlists.items() if handle in handles.get('Handles',[])), None)
 
@@ -228,7 +240,7 @@ def main():
                     continue
                 elif response_mnr.is_restricted(response):
                     files_manager.add_element_to_file(file_path, video_id, False)
-                    response_mnr.add_response_df(files_manager.restriction_folder / f'{handle}.csv', response)
+                    response_mnr.add_response_df(restriction_folder / f'{handle}.csv', response)
                     
                 elif video_id_info['liveStreamingDetails'] and handle in skip_liveStreamingDetails_handle:
                     files_manager.add_element_to_file(file_path,video_id, False)
