@@ -17,7 +17,7 @@ to private playlists using the YouTube Data API.
 
 ## Important Notes
 
-1. To use this repository, you must generate a YouTube Data API key and create a file named `API_KEY.py`.
+1. To use this repository, you must generate a YouTube Data API key and create a file named `API_KEY.py`. Is also necessary to manually create the file `credentials.json` and stored in  `Tokens/`. [Learn More](https://developers.google.com/youtube/registering_an_application)
 2. The YouTube API is free to use but has a daily quota limit of 10,000 units. See the [Quota Calculator](https://developers.google.com/youtube/v3/determine_quota_cost).
 3. This project is still a work in progress, and more features will be added over time.
 
@@ -31,7 +31,7 @@ to private playlists using the YouTube Data API.
 To reduce daily quota usage, the project stores cached information in `.txt` and `.csv` files and creates the following folders:
 
 - `Content Creators/`: each YouTube channel (handle) has its own file storing video IDs already added.
-- `Exceptions/`: handles that should not be added to a playlist (e.g. shorts-only channels).
+- `Exceptions/`: handles that should not be added to any playlist (e.g. shorts-only channels).
 - `Playlists/`: each `.txt` file represents a playlist and contains associated handles.
 - `Restrictions/`: videos blocked in your region are stored here and skipped.
 - `Stats/`: files tracking daily quota usage and a DataFrame with channel information.
