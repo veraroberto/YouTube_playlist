@@ -28,29 +28,30 @@ class PlaylistManager():
         source_name = playlist_choosen['name']
         print(source_id)
         print(source_name)
-        playlist_id = playlist_choosen['id']
-        video_ids = self.yt.get_all_ids_playlist(playlist_id,200)
-        for video_id in video_ids:
-            response = self.yt.get_response_video_id(video_id)
-            video_info = self.respons_mnr.get_video_info(response)
-            channelId = video_info['channelId']
+        # playlist_id = playlist_choosen['id']
+        # video_ids = self.yt.get_all_ids_playlist(playlist_id,200)
+        # for video_id in video_ids:
+        #     response = self.yt.get_response_video_id(video_id)
+        #     video_info = self.respons_mnr.get_video_info(response)
+        #     channelId = video_info['channelId']
 
-            if channelId in self.df['channelId'].values:
-                handle = self.df[self.df['channelId'] == channelId]['Handle'].iloc[0]
-            else:
-                response_channel = self.yt.get_channel_response(channelId)
-                items = response_channel.get('items', [])
-                if not items:
-                    continue
-                snippet = items[0].get('snippet', {})
-                handle = snippet.get('customUrl', '').replace('@', '')
-            playlist_handles[handle].append(video_id)
-        sorted_keys = sorted(playlist_handles, key=lambda x: len(playlist_handles[x]), reverse=True)
-        alignment_key = max(len(key) for key in playlist_handles)
-        alignment_val = max(len(str(len(v))) for v in playlist_handles.values())
-        for key in sorted_keys:
-            key_string = f'{key}:'
-            print(f'{key_string:<{alignment_key + 1}} {len(playlist_handles[key]):>{alignment_val}}')
+        #     if channelId in self.df['channelId'].values:
+        #         handle = self.df[self.df['channelId'] == channelId]['Handle'].iloc[0]
+        #     else:
+        #         response_channel = self.yt.get_channel_response(channelId)
+        #         items = response_channel.get('items', [])
+        #         if not items:
+        #             continue
+        #         snippet = items[0].get('snippet', {})
+        #         handle = snippet.get('customUrl', '').replace('@', '')
+        #     playlist_handles[handle].append(video_id)
+        # sorted_keys = sorted(playlist_handles, key=lambda x: len(playlist_handles[x]), reverse=True)
+        # alignment_key = max(len(key) for key in playlist_handles)
+        # alignment_val = max(len(str(len(v))) for v in playlist_handles.values())
+        # for key in sorted_keys:
+        #     key_string = f'{key}:'
+        #     print(f'{key_string:<{alignment_key + 1}} {len(playlist_handles[key]):>{alignment_val}}')
+        sorted_keys = self.count_handles_playlist(source_id)
         move_handles = []
         while True:
             choose_key = choose_option(sorted_keys, "Choose a Handle to move")
@@ -108,8 +109,40 @@ class PlaylistManager():
         total_duration = time.time() - start_moving
         print(f'Total duration of the moving process => {duration_string(total_duration)}')      
 
+    def count_handles_playlist(self, playlist_id: str) -> None:
+        playlist_handle = defaultdict(list)
+        # Select the Playlist
+        # names = [p['name'] for p in self.playlist_names]
+        # playlist = choose_option( names, "Select the Playlist to count: ")
+        # playlist_id = self.playlist_names[names.index(playlist)]['id']
+        # # print(playlist)
+        # print(playlist_id)
+        video_ids = self.yt.get_all_ids_playlist(playlist_id, 20)
+        for video_id in video_ids:
+            response = self.yt.get_response_video_id(video_id)
+            video_info = self.respons_mnr.get_video_info(response)
+            channelId = video_info['channelId']
+            if channelId in self.df['channelId'].values:
+                handle = self.df[self.df['channelId'] == channelId]['Handle'].iloc[0]
+            else:
+                handle = 'Not in DF'
+            playlist_handle[handle].append(video_id)
+        
+        sorted_handels = sorted(playlist_handle, key= lambda x: len(playlist_handle[x]), reverse=True)
+        align = max(len(key) for key in playlist_handle) + 1
+        align_num = len(str(max(len(playlist_handle[h]) for h in playlist_handle)))
+        for h in sorted_handels:
+            label = f"{h}:".ljust(align)
+        # 3. Get the count as a string and use .rjust() to align it to the right
+            count = str(len(playlist_handle[h])).rjust(align_num)
+            
+            print(f"{label} {count}")
+
+        return sorted_handels
 if __name__ =='__main__':
     pm = PlaylistManager()
+    # playlist_id = 'PLpLSuxy9E5PzxURBwG1_KnFrp5hDrVMr0'
+    # pm.count_handles_playlist(playlist_id)
     pm.move_video_to_playlist()
 
 

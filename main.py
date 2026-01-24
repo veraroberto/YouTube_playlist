@@ -1,7 +1,8 @@
 import argparse
 from YouTube import YouTubeManager
 from filesManager import filesManager
-from paths import content_creator_folder, exception_folder, playlist_folder,restriction_folder
+from paths import (content_creator_folder, exception_folder,
+                   playlist_folder,restriction_folder)
 # from app import app
 from response import response_manager
 
@@ -12,7 +13,9 @@ from collections import defaultdict
 
 # import pandas as pd
 
-import time, re, pyperclip
+import time
+import re
+import pyperclip
 
 from app_functions import (choose_option,
                            clear_terminal,
@@ -94,7 +97,10 @@ def main():
             'Add new row to the Data Frame': df_mnr.add_row_df
         }
         function = choose_option(list(functions_dict.keys()),'Choose a Function: ')
-        functions_dict[function]()
+        while True:
+            functions_dict[function]()
+            if not choose_option([True, False], f'Continue adding {function}'):
+                break
         return
 
 
@@ -375,6 +381,4 @@ def main():
 
 if __name__ == "__main__":
     main()
-    # yt = YouTubeManager()
-    # playlist_names = yt.get_all_playlists()
-    # print(playlist_names)
+

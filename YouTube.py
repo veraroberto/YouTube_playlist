@@ -50,7 +50,7 @@ class YouTubeManager:
 
         return build("youtube", "v3", credentials=creds)
 
-    def get_response_video_id(self, video_id):
+    def get_response_video_id(self, video_id: str) -> dict:
         # Now use self.youtube (no need to pass it from notebook)
         response = self.youtube.videos().list(
             part="snippet,contentDetails,liveStreamingDetails",
@@ -68,7 +68,7 @@ class YouTubeManager:
         self.files_manager.add_to_today_quota(1)
         return response 
 
-    def get_all_playlists(self):
+    def get_all_playlists(self) -> None:
         """Retrieve all playlists from the authenticated account."""
         playlists = []
         try:
@@ -94,7 +94,7 @@ class YouTubeManager:
         except HttpError as e:
             print(f"An error occurred while getting all the Playlist: {e}")
 
-    def get_subscriptions(self):
+    def get_subscriptions(self) ->list:
         subscriptions = []
         request = self.youtube.subscriptions().list(
             part="snippet,contentDetails,subscriberSnippet",
@@ -109,7 +109,7 @@ class YouTubeManager:
             request = self.youtube.subscriptions().list_next(request, response)
         return subscriptions
 
-    def get_all_ids_playlist(self, playlist_id, max_iterations = 5):
+    def get_all_ids_playlist(self, playlist_id: list, max_iterations: int = 5) -> list:
         """Retrieve all video IDs from a playlist, handling pagination."""
         iterations = 0
         video_ids = []
@@ -142,7 +142,7 @@ class YouTubeManager:
             print(f"An error occurred while getting all the Playlist {playlist_id}: {e}")
             return []
     
-    def create_private_playlist(self, title, description):
+    def create_private_playlist(self, title: str, description: str) -> str:
         """Create a private playlist on YouTube."""
         try:
             request = self.youtube.playlists().insert(
@@ -169,7 +169,7 @@ class YouTubeManager:
             print(f"An error occurred while creating the playlist {title}: {e}")
             return None
 
-    def add_video_to_playlist(self, playlist_id, video_id):
+    def add_video_to_playlist(self, playlist_id: str, video_id: str) -> None:
         """Add a video to a playlist."""
         try:
             request = self.youtube.playlistItems().insert(
@@ -191,8 +191,9 @@ class YouTubeManager:
             print(f"An error occurred while adding {video_id} in the Playlist {playlist_id}: {e}")
             return None
         
-    def delelte_video_id_from_playlist(self, playlist_id, video_id_to_delete, print_message = True):
-        items_per_page = 50
+    def delelte_video_id_from_playlist(self, playlist_id: str,
+                                       video_id_to_delete: str,
+                                       print_message: bool = True) -> None:
         # --- Step 1: Find the playlistItemId that matches the videoId ---
         page_token = None
         playlist_item_id = None
@@ -229,7 +230,7 @@ class YouTubeManager:
             print("⚠️ Video not found in playlist.")
             return None
    
-    def get_response_channel_by_handle(self, handle):
+    def get_response_channel_by_handle(self, handle: str) -> dict:
         handle = "@" + handle.replace('@', "")
         url = f"https://youtube.googleapis.com/youtube/v3/channels?forHandle={handle}&part=snippet,statistics,contentDetails&key={api_key}"
         response = requests.get(url)
@@ -244,7 +245,7 @@ class YouTubeManager:
         # uploads = data['items'][0]['contentDetails']['relatedPlaylists']['uploads']
         # return channelId, channelTitle, uploads
 
-    def get_response_from_playlist_id(self, playlist_id):
+    def get_response_from_playlist_id(self, playlist_id: str) -> dict:
         response = self.youtube.playlists().list(
             part="snippet,contentDetails,id",
             id=playlist_id).execute()

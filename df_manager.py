@@ -6,7 +6,7 @@ from response import response_manager
 from app_functions import choose_option, remove_accents
 from manage_video_ids import get_video_id, get_playlist_id
 from paths import playlist_folder, exception_folder, content_creator_folder
-from manage_video_ids import manage_exceptions
+# from manage_video_ids import manage_exceptions
 
 from pathlib import Path
 import pandas as pd
@@ -182,19 +182,19 @@ class df_manager:
             YT_content_creators_iter = YT_content_creators
             
         elif search_handles == search_options[1]:
-            YT_content_creators_iter = YT_content_creators[YT_content_creators['uploadsID'].str.startswith('PL')].reset_index(drop=True)
+            YT_content_creators_iter = YT_content_creators[YT_content_creators['uploads'].str.startswith('PL')].reset_index(drop=True)
             
         elif search_handles == search_options[2] or search_handles == search_options[3]:
             if search_handles == search_options[2]:
-                message = 'Handles from Playlist to be incluede in the Data Frame'
+                message = 'Handles from Playlist to be include in the Data Frame'
                 message_2 = "Playlist that would be in the Data Frame"
             else:
-                message = 'Handles from Playlist that would not be incluede in the iteration of the Data Frame'
+                message = 'Handles from Playlist that would not be include in the iteration of the Data Frame'
                 message_2 = 'Playlist that would not be in the Data Frame'
-            playlist_choosen = []
+            playlist_chosen = []
             youtube_names_iter = [file.stem.replace("_", " ").strip() for file in playlist_folder.iterdir() if file.suffix == '.txt']
             playlist_to_search = choose_option(youtube_names_iter, message)
-            playlist_choosen.append(playlist_to_search)
+            playlist_chosen.append(playlist_to_search)
             file_path = playlist_folder / f'{playlist_to_search.replace(" ", "_")}.txt'
             handles_filter = self.files_manager.get_elements_from_file(file_path, False)
             youtube_names_iter.pop(youtube_names_iter.index(playlist_to_search))
@@ -205,10 +205,10 @@ class df_manager:
                     youtube_names_iter.pop(youtube_names_iter.index(playlist_to_search))
                     file_path = playlist_folder / f'{playlist_to_search.replace(" ", "_")}.txt'
                     handles_filter.extend(self.files_manager.get_elements_from_file(file_path, False))
-                    playlist_choosen.append(playlist_to_search)
+                    playlist_chosen.append(playlist_to_search)
                 else:
                     break
-            print(f'{message_2}: {", ".join(playlist_choosen)}')
+            print(f'{message_2}: {", ".join(playlist_chosen)}')
             if search_handles == search_options[2]:
                 YT_content_creators_iter = YT_content_creators[YT_content_creators['Handle'].isin(handles_filter)].reset_index(drop=True)
             if search_handles == search_options[3]:
@@ -230,13 +230,7 @@ class df_manager:
 
 if __name__ == "__main__":
     test = df_manager()
-    # test.delete_information_in_files()
-    # test.add_row_df()
-    functions = {
-        # [test.delete_information_in_files, test.add_row_df]
-        'Delete Information from files': test.delete_information_in_files, 
-        'Add new row to the Data Frame': test.add_row_df
-    }
-    function = choose_option(list(functions.keys()),'Choose a Function')
-    if function is not None:
-        functions[function]()
+    fm = filesManager()
+    df = fm.YT_content_creators
+    df = test.get_df_to_iterate(playlist_folder, df)
+    print(df)
