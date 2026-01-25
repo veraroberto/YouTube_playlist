@@ -191,7 +191,7 @@ class YouTubeManager:
             print(f"An error occurred while adding {video_id} in the Playlist {playlist_id}: {e}")
             return None
         
-    def delelte_video_id_from_playlist(self, playlist_id: str,
+    def delete_video_id_from_playlist(self, playlist_id: str,
                                        video_id_to_delete: str,
                                        print_message: bool = True) -> None:
         # --- Step 1: Find the playlistItemId that matches the videoId ---

@@ -13,7 +13,7 @@ class PlaylistManager():
     
     def __init__(self):
         self.yt = YouTubeManager()
-        self.respons_mnr = response_manager()
+        self.response_mnr = response_manager()
         self.files_manager = filesManager()
         self.files_manager.YT_content_creators
         self.df = self.files_manager.YT_content_creators
@@ -22,35 +22,12 @@ class PlaylistManager():
     def move_video_to_playlist(self) -> None:
         quota_limit = 8000
         playlist_handles = defaultdict(list)   
-        playlist_choosen = choose_option(self.playlist_names, "Choose Origin Playlist")
-        self.playlist_names.remove(playlist_choosen)
-        source_id = playlist_choosen['id']
-        source_name = playlist_choosen['name']
+        playlist_chosen = choose_option(self.playlist_names, "Choose Origin Playlist")
+        self.playlist_names.remove(playlist_chosen)
+        source_id = playlist_chosen['id']
+        source_name = playlist_chosen['name']
         print(source_id)
         print(source_name)
-        # playlist_id = playlist_choosen['id']
-        # video_ids = self.yt.get_all_ids_playlist(playlist_id,200)
-        # for video_id in video_ids:
-        #     response = self.yt.get_response_video_id(video_id)
-        #     video_info = self.respons_mnr.get_video_info(response)
-        #     channelId = video_info['channelId']
-
-        #     if channelId in self.df['channelId'].values:
-        #         handle = self.df[self.df['channelId'] == channelId]['Handle'].iloc[0]
-        #     else:
-        #         response_channel = self.yt.get_channel_response(channelId)
-        #         items = response_channel.get('items', [])
-        #         if not items:
-        #             continue
-        #         snippet = items[0].get('snippet', {})
-        #         handle = snippet.get('customUrl', '').replace('@', '')
-        #     playlist_handles[handle].append(video_id)
-        # sorted_keys = sorted(playlist_handles, key=lambda x: len(playlist_handles[x]), reverse=True)
-        # alignment_key = max(len(key) for key in playlist_handles)
-        # alignment_val = max(len(str(len(v))) for v in playlist_handles.values())
-        # for key in sorted_keys:
-        #     key_string = f'{key}:'
-        #     print(f'{key_string:<{alignment_key + 1}} {len(playlist_handles[key]):>{alignment_val}}')
         sorted_keys = self.count_handles_playlist(source_id)
         move_handles = []
         while True:
@@ -101,26 +78,21 @@ class PlaylistManager():
                 if self.files_manager.get_today_quota() > quota_limit:
                     print(f"Stopping the Processs to prevent the quota surpass {quota_limit:,}")
                     return
-                if self.yt.delelte_video_id_from_playlist(source_id, video_id_to_move, print_message = False) is None:
-                    print(f"There is a problem deleting {video_id_to_move} from {source_name}. Stopinng Everythin.")
+                if self.yt.delete_video_id_from_playlist(source_id, video_id_to_move, print_message = False) is None:
+                    print(f"There is a problem deleting {video_id_to_move} from {source_name}. Stopping Everything.")
                     return
                 if self.yt.add_video_to_playlist(destination_id, video_id_to_move) is None:
-                    print(f"There is a problem adding {video_id_to_move} to {destination_name}. Stopinng Everythin.")
+                    print(f"There is a problem adding {video_id_to_move} to {destination_name}. Stopping Everything.")
         total_duration = time.time() - start_moving
         print(f'Total duration of the moving process => {duration_string(total_duration)}')      
 
     def count_handles_playlist(self, playlist_id: str) -> None:
         playlist_handle = defaultdict(list)
-        # Select the Playlist
-        # names = [p['name'] for p in self.playlist_names]
-        # playlist = choose_option( names, "Select the Playlist to count: ")
-        # playlist_id = self.playlist_names[names.index(playlist)]['id']
-        # # print(playlist)
-        # print(playlist_id)
+
         video_ids = self.yt.get_all_ids_playlist(playlist_id, 20)
         for video_id in video_ids:
             response = self.yt.get_response_video_id(video_id)
-            video_info = self.respons_mnr.get_video_info(response)
+            video_info = self.response_mnr.get_video_info(response)
             channelId = video_info['channelId']
             if channelId in self.df['channelId'].values:
                 handle = self.df[self.df['channelId'] == channelId]['Handle'].iloc[0]
