@@ -17,18 +17,17 @@ class PlaylistManager():
         self.files_manager = filesManager()
         self.files_manager.YT_content_creators
         self.df = self.files_manager.YT_content_creators
-        self.playlist_names =self.yt.get_all_playlists()
         
-    def move_video_to_playlist(self) -> None:
-        quota_limit = 8000
-        playlist_handles = defaultdict(list)   
-        playlist_chosen = choose_option(self.playlist_names, "Choose Origin Playlist")
-        self.playlist_names.remove(playlist_chosen)
+        
+    def move_video_to_playlist(self, quota_limit: int = 8000) -> None:
+        
+        playlist_handles = defaultdict(list)
+        playlist_names =self.yt.get_all_playlists()
+        playlist_chosen = choose_option(playlist_names, "Choose Origin Playlist")
+        playlist_names.remove(playlist_chosen)
         source_id = playlist_chosen['id']
         source_name = playlist_chosen['name']
-        print(source_id)
-        print(source_name)
-        sorted_keys = self.count_handles_playlist(source_id)
+        sorted_keys = list(self.count_handles_playlist(source_id).keys())
         move_handles = []
         while True:
             choose_key = choose_option(sorted_keys, "Choose a Handle to move")
@@ -38,8 +37,8 @@ class PlaylistManager():
                 break
         print(f'Moving the following handles: {", ".join(sorted(move_handles, key=str.lower))}')
         another_options = ['Create New Playlist', 'Do nothing and Exit']
-        self.playlist_names.extend(another_options)
-        destination = choose_option(self.playlist_names, "Choose Destination Playlist")
+        playlist_names.extend(another_options)
+        destination = choose_option(playlist_names, "Choose Destination Playlist")
         
         if destination == another_options[0]:
             destination_name = input('Name of the new Playlist: ')
@@ -86,9 +85,8 @@ class PlaylistManager():
         total_duration = time.time() - start_moving
         print(f'Total duration of the moving process => {duration_string(total_duration)}')      
 
-    def count_handles_playlist(self, playlist_id: str) -> None:
+    def count_handles_playlist(self, playlist_id: str) -> dict:
         playlist_handle = defaultdict(list)
-
         video_ids = self.yt.get_all_ids_playlist(playlist_id, 20)
         for video_id in video_ids:
             response = self.yt.get_response_video_id(video_id)
@@ -110,12 +108,13 @@ class PlaylistManager():
             
             print(f"{label} {count}")
 
-        return sorted_handels
+        return playlist_handle
 if __name__ =='__main__':
     pm = PlaylistManager()
     # playlist_id = 'PLpLSuxy9E5PzxURBwG1_KnFrp5hDrVMr0'
     # pm.count_handles_playlist(playlist_id)
-    pm.move_video_to_playlist()
+    pm.move_video_to_playlist(6500) 
+   
 
 
         

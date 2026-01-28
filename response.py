@@ -153,20 +153,11 @@ if __name__ == '__main__':
     # video_id = 'dMMHSXn9pow'
     yt = YouTubeManager()
     response_mn =  response_manager()
-
-
-    # channelId = 'UCuPivVjnfNo4mb3Oog_frZg'
-    # channel_response = yt.get_channel_response(channelId)
-    # # print(channel_response)
-    # handle = 'AlAireCon'.lower()
-    # channel_response =  yt.get_response_channel_by_handle(handle)
+    video_id = '7hzS3Wlnx2A'
+    response = yt.get_response_video_id(video_id)
+    video_id_info = response_mn.get_video_info(response)
+    # video_id_info['file_path'] = file_path
+    # video_id_info['response'] = response
+    video_id_info['response'] = response
+    print(video_id_info['response']['items'])
     
-    # channel_info = response_mn.get_channel_info(channel_response)
-    # print(channel_info)
-
-    playlist_id = "PLiNo79GXtxAs0UUxvNczk6lB9IoBsjgYO"
-    playlist_response = yt.get_response_from_playlist_id(playlist_id)
-    
-    playlist_info = response_mn.get_playlist_info(playlist_response)
-    print(playlist_id)
-    print(playlist_info)

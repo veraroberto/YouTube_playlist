@@ -95,7 +95,7 @@ class df_manager:
         else:
             playlist_file_path = playlist_folder / f'{handle_playlist.replace(" ","_")}.txt'
             self.files_manager.add_element_to_file(playlist_file_path, handle, sort_list=False)
-        video_ids_yt = self.yt.get_all_ids_playlist(uploads, 100)
+        video_ids_yt = self.yt.get_all_ids_playlist(uploads, 200)
         if video_ids_yt:    
         # print(f'Time getting the video ids: {duration_string(time.time() - inicio)}')
 

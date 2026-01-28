@@ -1,7 +1,10 @@
 from pathlib import Path
 from urllib.parse import urlparse, parse_qs
 from app_functions import (choose_option)
-from paths import content_creator_folder
+from paths import (content_creator_folder,
+                   exception_folder)
+
+
 
 def get_video_id(url: str) -> str:
     url = url.strip().replace('https://www.youtube.com/shorts/', 'https://www.youtube.com/watch?v=')
@@ -45,12 +48,12 @@ def add_video_manually(YouTubeManager: classmethod, filesManager: classmethod, u
         print(f'The file handle {handle_file_path.stem} does not exists')
 
 def manage_exceptions(filesManager: classmethod) -> None:
-    options = [file for file in filesManager.exception_folder.iterdir() if file.suffix == '.txt']
+    options = [file for file in exception_folder.iterdir() if file.suffix == '.txt']
     options.append('New Exception File')
     exception_file = choose_option(options, message="Choose the Exception to add: ")
     if exception_file == options[-1]:
         new_file_name = input('New file:').strip()
-        exception_file = filesManager.exception_folder / new_file_name
+        exception_file = exception_folder / new_file_name
         exception_element = input(f'Video ID of a Vertical Video ID: ')
         
     else:

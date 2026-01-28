@@ -10,8 +10,13 @@ from filesManager import filesManager
 
 from paths import tokens_folder
 
+default_date = "2005-04-24T03:31:52Z" #Timestamp of the first YouTube video ever published 
+quota_limit = 9900 # I set at this value since sometime the API doesn't allow for more request when you are to close to the limit.
+yt_url = 'https://www.youtube.com/watch?v='
+yt_playlist = 'https://www.youtube.com/playlist?list='
+
 class YouTubeManager:
-    yt_url = 'https://www.youtube.com/watch?v='
+
     def __init__(self):
         # 1. Store the paths
         self.files_manager = filesManager()
@@ -19,12 +24,7 @@ class YouTubeManager:
         # 2. Authenticate and store the 'youtube' client as 'self.youtube'
         self.youtube = self._authenticate()
         
-           
-    default_date = "2005-04-24T03:31:52Z" #Timestamp of the first YouTube video ever published 
-    quota_limit = 9900 # I set at this value since sometime the API doesn't allow for more request when you are to close to the limit.
-    
-
-    def _authenticate(self):
+    def _authenticate(self) -> None:
         SCOPES = ["https://www.googleapis.com/auth/youtube"]
         token_file = tokens_folder / "token.pickle"
         credentials_json = tokens_folder / "credentials.json"
@@ -59,7 +59,7 @@ class YouTubeManager:
         self.files_manager.add_to_today_quota(1)
         return response
 
-    def get_channel_response(self, channel_id):
+    def get_channel_response(self, channel_id: str) -> dict:
         """Fetch the uploads playlist ID for a channel."""
         response = self.youtube.channels().list(
             part="contentDetails,snippet,statistics",
@@ -68,7 +68,7 @@ class YouTubeManager:
         self.files_manager.add_to_today_quota(1)
         return response 
 
-    def get_all_playlists(self) -> None:
+    def get_all_playlists(self) -> list:
         """Retrieve all playlists from the authenticated account."""
         playlists = []
         try:
@@ -109,7 +109,9 @@ class YouTubeManager:
             request = self.youtube.subscriptions().list_next(request, response)
         return subscriptions
 
-    def get_all_ids_playlist(self, playlist_id: list, max_iterations: int = 5) -> list:
+    def get_all_ids_playlist(self, playlist_id: list, max_iterations: int = 5,
+                             print_iterations: bool= False) -> list:
+        # The API only allows a max_iteration = 400
         """Retrieve all video IDs from a playlist, handling pagination."""
         iterations = 0
         video_ids = []
@@ -137,12 +139,14 @@ class YouTubeManager:
         
                 if not next_page_token:
                     break  # Exit loop when there are no more pages
+            if print_iterations:
+                print(f'There were {iterations} iterations in the process. The original number of iteration were {max_iterations}')
             return video_ids
         except HttpError as e:
             print(f"An error occurred while getting all the Playlist {playlist_id}: {e}")
             return []
     
-    def create_private_playlist(self, title: str, description: str) -> str:
+    def create_private_playlist(self, title: str, description: str) -> dict | None:
         """Create a private playlist on YouTube."""
         try:
             request = self.youtube.playlists().insert(
@@ -169,7 +173,7 @@ class YouTubeManager:
             print(f"An error occurred while creating the playlist {title}: {e}")
             return None
 
-    def add_video_to_playlist(self, playlist_id: str, video_id: str) -> None:
+    def add_video_to_playlist(self, playlist_id: str, video_id: str) -> dict | None:
         """Add a video to a playlist."""
         try:
             request = self.youtube.playlistItems().insert(
@@ -255,6 +259,7 @@ class YouTubeManager:
 
 if __name__ =='__main__':
     pass
+
 
 
 

@@ -12,6 +12,19 @@ def clear_terminal() -> None:
     else:
         _ = os.system('clear')
 
+def generate_lable(options: list) -> dict:
+        option_map = {}
+        for i, value in enumerate(options, 1):
+            label = ""
+            n = i
+            while n > 0:
+                n, remainder = divmod(n - 1, 26)
+                label = chr(65 + remainder) + label
+            
+            option_map[label] = value
+            print(f"[{label}] {value}")
+        return option_map
+
 def choose_option(options: list, message: str = "Enter your choice: ") -> str | None:
     if not isinstance(options, list):
         raise TypeError(f"Expected a list, but got {type(options).__name__}")
@@ -21,28 +34,14 @@ def choose_option(options: list, message: str = "Enter your choice: ") -> str | 
 
     # 1. Create the mapping using the math helper
     print(f'{message}')
-    option_map = {}
-    for i, value in enumerate(options, 1):
-            label = ""
-            n = i
-            while n > 0:
-                n, remainder = divmod(n - 1, 26)
-                label = chr(65 + remainder) + label
-            
-            option_map[label] = value
-            print(f"[{label}] {value}")
-
-    # 2. Input Loop
-    
+    option_map = generate_lable(options)
+  
     while True:
         choice = input("Select an option: ").strip().upper()
-        
         if not choice: # Handle empty Enter key
             continue
-            
         if choice in option_map:
             return option_map[choice]
-            
         print(f"Invalid choice '{choice}'. Please pick a label from the list.")
 
 def remove_accents(text: str) -> str:
@@ -85,5 +84,4 @@ def is_short(video_id: str) -> bool | None:
     
 
 if __name__ == '__main__':
-    print(os.name)
-    pass
+    op = choose_option([True, False], "Choose:")

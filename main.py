@@ -69,7 +69,6 @@ def main():
                             )
             if not choose_option([True, False], message="Add another video ID: "):
                 break
-        clear_terminal()
         return
     
     elif args.command == 'add-list-videos':
@@ -167,6 +166,9 @@ def main():
     WL_shorts_path = exception_folder / 'WL_shorts.txt'
     WL_shorts = files_manager.get_elements_from_file(WL_shorts_path, create_file = True)
 
+    more_iterations_path = exception_folder / "more_iterations.txt"
+    more_iterations = files_manager.get_elements_from_file(more_iterations_path, create_file=True)    
+
     missing_video_ids = files_manager.find_missing_elements(all_ids_from_playlist)
     if missing_video_ids:
         print(f'There are {len(missing_video_ids)} videos not in the files')
@@ -228,27 +230,36 @@ def main():
         handle = row.Handle
         channelName = row.channelName
         channelId = row.channelId
-        uploadsID = row.uploads
+        uploads = row.uploads
 
         print(" "*len(message), end='\r')
         message = f'{row.Index + 1:0{digits}d} / {num_rows}: {channelName}'
         print(message, end='\r')
-        videos_ids = yt.get_all_ids_playlist(uploadsID, 1)
+        iterations = 1
+        if handle in more_iterations:
+            """
+            In some Podcast the IDs are not sorted by by date in descending order, so it would need
+            more iterations to get the new video IDs
+            """ 
+            iterations = 10
+        videos_ids = yt.get_all_ids_playlist(uploads, iterations)
         videos_ids.reverse()
         file_path = content_creator_folder / f'{handle}.txt'
         handle_ids = files_manager.get_elements_from_file(file_path, create_file = True)
         playlist_key = next((key for key, handles in youtube_playlists.items() if handle in handles.get('Handles',[])), None)
 
         for index, video_id in enumerate(videos_ids,):
-            if video_id not in handle_ids: #or video_id not in all_ids_from_playlist:
+            # try:
+            if video_id not in handle_ids:
                 response = yt.get_response_video_id(video_id)
+                if not response:
+                    files_manager.add_element_to_file(file_path, video_id, False)
+                    continue    
                 video_id_info = response_mnr.get_video_info(response)
                 video_id_info['file_path'] = file_path
                 video_id_info['response'] = response
 
-                if not video_id_info:
-                    continue            
-                elif video_id_info['liveBroadcastContent'] == 'upcoming' or  video_id_info['duration'] == 0:
+                if video_id_info['liveBroadcastContent'] == 'upcoming' or  video_id_info['duration'] == 0:
                     continue
                 elif response_mnr.is_restricted(response):
                     files_manager.add_element_to_file(file_path, video_id, False)
@@ -277,6 +288,9 @@ def main():
                         youtube_playlists[playlist_key]['new_video_ids'].append(video_id_info)
                     else:
                         youtube_playlists[other_playlist_name]['new_video_ids'].append(video_id_info)
+            # except:
+            #     print(video_id)
+            #     print(video_id_info)
         if was_braked:
             pass
             # break                 
