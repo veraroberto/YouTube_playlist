@@ -122,7 +122,7 @@ class filesManager:
             print(f'The current quota usage is 0')
             return 0
 
-    def get_elements_from_file(self, file_path: Path, create_file: bool = True):
+    def get_elements_from_file(self, file_path: Path, create_file: bool = False):
             file_path = Path(file_path).with_suffix('.txt')
             if not file_path.exists():
                 if create_file:
