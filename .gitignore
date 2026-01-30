@@ -21,3 +21,4 @@ YT_files_manager.ipynb
 *.ipynb_checkpoints
 tests.py
 *.html
+*.json

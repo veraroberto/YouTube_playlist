@@ -1,6 +1,7 @@
 from YouTube import YouTubeManager
 from response import response_manager
 from filesManager import filesManager
+from YouTube import yt_url
 
 from app_functions import (choose_option,
                            duration_string)
@@ -96,7 +97,7 @@ class PlaylistManager():
                 handle = self.df[self.df['channelId'] == channelId]['Handle'].iloc[0]
             else:
                 handle = 'Not in DF'
-            playlist_handle[handle].append(video_id)
+            playlist_handle[handle].append(response)
         
         sorted_handels = sorted(playlist_handle, key= lambda x: len(playlist_handle[x]), reverse=True)
         align = max(len(key) for key in playlist_handle) + 1
@@ -109,12 +110,44 @@ class PlaylistManager():
             print(f"{label} {count}")
 
         return playlist_handle
+    
+
+
 if __name__ =='__main__':
+    import json
     pm = PlaylistManager()
+    response_mng = response_manager()
     # playlist_id = 'PLpLSuxy9E5PzxURBwG1_KnFrp5hDrVMr0'
     # pm.count_handles_playlist(playlist_id)
-    pm.move_video_to_playlist(6500) 
-   
+    # pm.move_video_to_playlist(6500) 
+    # playlist_id = 'PLpLSuxy9E5Pw3e_W2DwHvh2z3KTjL5ZKE'
+
+    # response_dict = pm.count_handles_playlist(playlist_id)
+    # file_path = 'Cine_Playlist.json'
+    # with open(file_path, 'w', encoding="utf-8") as json_file:
+    #     json.dump(response_dict, json_file, indent=4)
+    # with open(file_path, mode = 'r', encoding="utf-8") as json_file:
+    #     playlists_names = json.load(json_file)
+    # # print(playlists.keys())
+    # align = max(len(playlist) for playlist in playlists_names)
+    # playlists_names_sort = sorted(playlists_names, key = lambda x: len(playlists_names[x]), reverse=True)
+    # for playlist in playlists_names_sort:
+    #     responses = playlists_names[playlist]
+    #     # label = f'{playlist}:'.ljust(align + 1)
+    #     # count = f'{len(responses)}'.rjust(2)
+    #     # print(f'{label} {count}')
+
+    #     print(playlist)
+    #     for response in responses:
+    #         video_info = response_mng.get_video_info(response)
+    #         title = video_info['title']
+    #         publishedAt = video_info['publishedAt']
+    #         video_id = video_info['video_id']
+    #         message = f"{yt_url}{video_id}: {publishedAt} {title[0:70]}"
+    #         print(message[0:114])
+    #     print('*'*50)
+
+      
 
 
         
