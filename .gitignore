@@ -22,3 +22,4 @@ YT_files_manager.ipynb
 tests.py
 *.html
 *.json
+environment.local.yml
