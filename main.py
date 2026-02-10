@@ -1,11 +1,11 @@
 import argparse
-from YouTube import YouTubeManager
+from YouTube import (YouTubeManager,
+                     yt_url)
 from filesManager import filesManager
 from paths import (content_creator_folder, exception_folder,
-                   playlist_folder,restriction_folder)
+                   playlist_folder,restriction_folder, html_folder)
 # from app import app
 from response import response_manager
-
 
 # from itertools import count
 from pathlib import Path
@@ -16,12 +16,15 @@ from collections import defaultdict
 import time
 import re
 import pyperclip
+from datetime import date
+import json
 
 from app_functions import (choose_option,
                            clear_terminal,
                            remove_accents,
                            duration_string,
-                           is_short)
+                           is_short,
+                           create_bookmarks)
 from manage_video_ids import add_video_manually, manage_exceptions
 from df_manager import df_manager
 
@@ -108,7 +111,7 @@ def main():
         print("Doing Nothing")
         return
     # yt_channel = 'https://www.youtube.com/channel/'
-    yt_url = 'https://www.youtube.com/watch?v='
+
 
     ## Creates the Dictionary of the Playlists
     playlist_names = yt.get_all_playlists()
@@ -389,10 +392,53 @@ def main():
                 print(f'\t{index:02d} {yt_url}{video_id}')
 
             print('*'*50)
+        return not_added_videos
 
 
 
 
 if __name__ == "__main__":
-    main()
 
+    today = date.today()
+
+# Format as MM/DD/YYYY
+    formatted_date = today.strftime("%Y-%m-%d")
+
+    not_added_videos = main()
+
+    if not_added_videos:
+        # Create a cleaned copy of the dictionary without 'file_path'
+        cleaned_videos = {
+        category: [
+            {k: v for k, v in video.items() if k != 'file_path'}
+            for video in video_list
+        ]
+        for category, video_list in not_added_videos.items()
+        }
+        urls_files = html_folder / f"{formatted_date}_urls.json"
+        # Now save the cleaned dictionary
+        with open(urls_files, "w", encoding="utf-8") as f:
+            json.dump(cleaned_videos, f, ensure_ascii=False, indent=4)
+        
+        today = date.today()
+        formatted_date = today.strftime("%Y-%m-%d")
+        todays_file = f'{formatted_date}_urls.json'
+
+        with open(urls_files, "r", encoding="utf-8") as f:
+            todays_playlist = json.load(f)
+        if todays_playlist:
+            print('The follwoing playlist html files were created:')
+            for pl_index, playlist in enumerate(todays_playlist, 1):
+                print(f'{pl_index:02d} {playlist}')
+                urls_dict = {}
+                todays_video = todays_playlist[playlist]
+                todays_video.sort(key = lambda x: x['response']['items'][0]['snippet']['publishedAt'])
+                for index, video in enumerate(todays_video):
+                    publishedAt = video['response']['items'][0]['snippet']['publishedAt']
+                    title = video['title']
+                    video_id = video['video_id']
+                    urls_dict[video_id] = f'{index:02d} {publishedAt} {title}'
+                file_html = html_folder / f'{formatted_date}_{playlist.replace(" ", "_")}.html'
+                create_bookmarks(urls_dict, file_html, yt_url)
+
+            

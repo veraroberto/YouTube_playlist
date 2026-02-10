@@ -10,6 +10,7 @@ from paths import (content_creator_folder,
                    restriction_folder,
                    stats_folder,
                    tokens_folder,
+                   html_folder,
                    columns_df)
 
 class filesManager:   
@@ -41,6 +42,10 @@ class filesManager:
         if not tokens_folder.exists():
             tokens_folder.mkdir(parents=True, exist_ok=True)
             print(f'The folder {tokens_folder.stem} was created')
+        
+        if not html_folder.exists():
+            html_folder.mkdir(parents=True, exist_ok=True)
+            print(f'The folder {html_folder.stem} was created')         
             
         self.quota_filename = stats_folder / 'Quota.csv'
         self.file_path_yt_creators = stats_folder / 'YT_content_creators.csv'

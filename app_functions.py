@@ -83,16 +83,35 @@ def is_short(video_id: str) -> bool | None:
     else:
         return  # Unexpected case
 
-def create_bookmarks_2(urls: dict,file_path: Path="bookmarks.html"):
-    with open(file_path, mode="r", encoding="utf-8") as file:
-        soup = BeautifulSoup(file, 'html.parser')
-    print(soup)
+def create_bookmarks(urls: dict, file_path: str = "bookmarks.html", partial_url: str = yt_url):
+    #Dictionary: key = partial_url, value = 
+    file_path_obj = Path(file_path)
+    
+    # This will hold ALL bookmarks (Old + New)
+    # Format: { "url": "Name" }
+    all_bookmarks = {}
 
-    all_a = soup.find_all("a")
-    current_urls = [a.get('href') for a in all_a]
+    # 1. If file exists, "import" the old bookmarks into our dictionary
+    if file_path_obj.exists():
+        with open(file_path_obj, mode="r", encoding="utf-8") as file:
+            soup = BeautifulSoup(file, 'html.parser')
+            for a in soup.find_all("a"):
+                href = a.get('href')
+                name = a.string or ""
+                all_bookmarks[href] = name
 
-    # Firefox bookmark header
-    html = [
+    # 2. Merge the NEW urls into the dictionary
+    # This automatically omits duplicates if the URL already exists
+    for p, name in urls.items():
+        full_url = partial_url + p
+        all_bookmarks[full_url] = name
+
+    # 3. Sort the entire collection by the NAME (the value in the dict)
+    # x[1] is the Name. .lower() ensures "apple" and "Apple" sort correctly.
+    sorted_items = sorted(all_bookmarks.items(), key=lambda x: x[1].lower())
+
+    # 4. Prepare the HTML with the sorted list
+    html_lines = [
         '<!DOCTYPE NETSCAPE-Bookmark-file-1>',
         '<META HTTP-EQUIV="Content-Type" CONTENT="text/html; charset=UTF-8">',
         '<TITLE>Bookmarks</TITLE>',
@@ -100,63 +119,17 @@ def create_bookmarks_2(urls: dict,file_path: Path="bookmarks.html"):
         '<DL><p>'
     ]
 
-    for p in urls:
-        html.append(f'    <DT><A HREF="{yt_url+ p}">{urls[p]}</A>')
+    for url, name in sorted_items:
+        html_lines.append(f'    <DT><A HREF="{url}">{name}</A>')
 
-    html.append('</DL><p>')
+    html_lines.append('</DL><p>')
 
-    with open(file_path, "w", encoding="utf-8") as f:
-        f.write("\n".join(html))
+    # 5. Overwrite the file with the full, sorted list
+    with open(file_path_obj, "w", encoding="utf-8") as f:
+        f.write("\n".join(html_lines))
 
-    print(f"🔥 bookmarks created: {file_path}")
+    print(f"🔥 Total {len(sorted_items)} bookmarks sorted and saved to: {file_path}")
 
-import os
-from bs4 import BeautifulSoup
-
-def create_bookmarks(file_path: Path, link_dict: dict):
-# 1. Check if file exists AND has content; otherwise, create a skeleton
-    if not file_path.exists(): #or os.stat(file_path).st_size == 0:
-        with open(file_path, 'w', encoding='utf-8') as f:
-            f.write("<html><body><div id='link-container'></div></body></html>")
-
-    with open(file_path, 'r', encoding='utf-8') as f:
-        soup = BeautifulSoup(f, 'html.parser')
-
-    # 2. Safety Check: Ensure container or body exists
-    container = soup.find(id='link-container')
-    if container is None:
-        # If no container, use body; if no body, create one
-        container = soup.body if soup.body else soup.new_tag("body")
-        if not soup.body:
-            soup.append(container)
-
-    # 3. Extract existing URLs
-    existing_links = {a.get('href') for a in container.find_all('a') if a.get('href')}
-
-    # 4. Add missing links
-    for partial_path, title in link_dict.items():
-        # Cleanly join base and partial URL
-        full_url = f"{yt_url.rstrip('/')}/{partial_path.lstrip('/')}"
-        
-        if full_url not in existing_links:
-            new_tag = soup.new_tag("a", href=full_url)
-            new_tag.string = title
-            container.append(new_tag)
-
-    # 5. Extract, Sort, and Re-insert
-    all_a_tags = container.find_all('a')
-    # Sort by the link text (Title)
-    sorted_tags = sorted(all_a_tags, key=lambda x: (x.text or "").strip().lower(), reverse=True)
-
-    # Clear container and re-add sorted links
-    container.clear()
-    for tag in sorted_tags:
-        container.append(tag)
-        container.append(soup.new_tag("br"))
-
-    # 6. Save changes
-    with open(file_path, 'w', encoding='utf-8') as f:
-        f.write(soup.prettify())
 
 if __name__ == '__main__':
     #

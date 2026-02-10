@@ -7,5 +7,6 @@ playlist_folder =  Path("Playlists")
 restriction_folder = Path('Restrictions')
 stats_folder = Path('Stats')
 tokens_folder = Path("Tokens")
+html_folder = Path('HTML')
 
 columns_df = ['Handle', 'channelName', 'channelId', 'uploads']
