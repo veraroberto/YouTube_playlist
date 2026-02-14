@@ -291,13 +291,10 @@ def main():
                         youtube_playlists[playlist_key]['new_video_ids'].append(video_id_info)
                     else:
                         youtube_playlists[other_playlist_name]['new_video_ids'].append(video_id_info)
-            # except:
-            #     print(video_id)
-            #     print(video_id_info)
+
         if was_braked:
             pass
-            # break                 
-    
+
     print(" "*len(message), end='\r')
     print(f'Duration to getting the new IDs => {duration_string(time.time() - start)}')
     if not was_braked:
@@ -325,7 +322,7 @@ def main():
             was_braked = True
             # break
         if new_video_ids:
-            if not playlist_id and not was_braked:
+            if not playlist_id and not was_braked and add_video_to_playlist:
                 response_playlist = yt.create_private_playlist(playlist, playlist)
                 playlist_id = response_playlist.get('id', "")
                 youtube_playlists[playlist]["Playlist_ID"] = playlist_id
@@ -433,12 +430,15 @@ if __name__ == "__main__":
                 urls_dict = {}
                 todays_video = todays_playlist[playlist]
                 todays_video.sort(key = lambda x: x['response']['items'][0]['snippet']['publishedAt'])
-                for index, video in enumerate(todays_video):
+                for index, video in enumerate(todays_video, 1):
                     publishedAt = video['response']['items'][0]['snippet']['publishedAt']
                     title = video['title']
                     video_id = video['video_id']
-                    urls_dict[video_id] = f'{index:02d} {publishedAt} {title}'
+                    urls_dict[video_id] = f'{index:02d} {title}'
                 file_html = html_folder / f'{formatted_date}_{playlist.replace(" ", "_")}.html'
-                create_bookmarks(urls_dict, file_html, yt_url)
+                create_bookmarks(urls_dict, file_html, yt_url,playlist)
+
+ 
+
 
             

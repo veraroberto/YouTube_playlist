@@ -5,15 +5,22 @@ from google_auth_oauthlib.flow import InstalledAppFlow
 from google.auth.transport.requests import Request
 from API_KEY import api_key
 import requests
+import json
 
+from app_functions import create_bookmarks
 from filesManager import filesManager
+from collections import defaultdict
+from paths import (tokens_folder,
+                   playlist_folder)
 
-from paths import tokens_folder
+
+from response import response_manager
 
 default_date = "2005-04-24T03:31:52Z" #Timestamp of the first YouTube video ever published 
 quota_limit = 9900 # I set at this value since sometime the API doesn't allow for more request when you are to close to the limit.
 yt_url = 'https://www.youtube.com/watch?v='
 yt_playlist = 'https://www.youtube.com/playlist?list='
+yt_channel = 'https://www.youtube.com/channel/'
 
 class YouTubeManager:
 
@@ -109,7 +116,7 @@ class YouTubeManager:
             request = self.youtube.subscriptions().list_next(request, response)
         return subscriptions
 
-    def get_all_ids_playlist(self, playlist_id: list, max_iterations: int = 5,
+    def get_all_ids_playlist(self, playlist_id: str, max_iterations: int = 5,
                              print_iterations: bool= False) -> list:
         # The API only allows a max_iteration = 400
         """Retrieve all video IDs from a playlist, handling pagination."""
@@ -258,10 +265,67 @@ class YouTubeManager:
         return response
 
 if __name__ =='__main__':
-    pass
+    yt = YouTubeManager()
+    fm = filesManager()
+    resp_mng = response_manager()
+    df = fm.YT_content_creators
+
+
+    # video_id = '7hTzFn83h4g'
+    # res = yt.get_response_video_id(video_id)
+    # video_info = resp_mng.get_video_info(res)
+    # channelId = video_info['channelId']
+    # print(channelId)
+    # print(channelId in df['channelId'].values)
+    # handle = df[df['channelId'] == channelId]['Handle'].iloc[0]
+    # print(handle)
+
+    playlist_names = yt.get_all_playlists()
+
+    youtube_names = [file.stem.replace('_', ' ').strip() for file in playlist_folder.iterdir() if file.suffix == '.txt']
+    align = max(len(p) for p in youtube_names)
+    num_videos = 0
+    playlist_dict = defaultdict(list)
+    for playlist in youtube_names:
+        playlist_id = next((d["id"] for d in playlist_names if playlist in d.values()), None)
+        
+        if playlist_id:
+            video_ids = yt.get_all_ids_playlist(playlist_id, 20, False)
+            # print(f'{playlist:<{align}} {len(video_ids):03d} {playlist_id}')
+            for video_id in video_ids:
+                res = yt.get_response_video_id(video_id)
+                video_info = resp_mng.get_video_info(res)
+                if not video_info:
+                    print(video_id)
+                    continue
+                channelId = video_info['channelId']
+                if channelId in df['channelId'].values:
+                    handle = df[df['channelId'] == channelId]['Handle'].iloc[0]
+                else:
+                    handle = 'Not in DataFrame'
+                playlist_dict[handle].append(video_id)
+            num_videos += len(video_ids)
+    print(f'There are {num_videos} videos in all the playlist')
     
+    file_path = f'count_handles.json'
+    with open(file_path, "w", encoding="utf-8") as f:
+        json.dump(playlist_dict, f, ensure_ascii=False, indent=4)
 
 
+
+    # subs = yt.get_subscriptions()   
+    # missing_sub = {}
+    # for s in subs:
+    #     snippet = s['snippet']
+    #     resourceId = snippet['resourceId']
+    #     channelId = resourceId['channelId']
+    #     title = snippet['title']
+    #     if channelId not in channelId_df:
+    #         missing_sub[channelId] = title
+    # align = max(len(t) for t in missing_sub.values())
+    # for m in missing_sub:
+    #     print(f'{missing_sub[m]:<{align}} {yt_channel}{m}')
+    # create_bookmarks(missing_sub, f'missing_sub.html', yt_channel)
 
 
 

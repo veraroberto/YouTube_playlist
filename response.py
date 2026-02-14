@@ -1,7 +1,6 @@
 import isodate
 import pandas as pd
 from filesManager import filesManager
-from YouTube import YouTubeManager
 from pathlib import Path
 # from urllib.request import urlopen
 
@@ -9,7 +8,7 @@ default_date = "2005-04-24T03:31:52Z" #Timestamp of the first YouTube video ever
 class response_manager():
     def __init__(self):
         self.files_manager = filesManager()
-        self.youtube = YouTubeManager()
+        # self.youtube = YouTubeManager()
         # self.data = json.load(urlopen('https://ipinfo.io/'))
         # self.current_country = self.data.get('country')
         self.current_country = "MX"
@@ -150,14 +149,5 @@ class response_manager():
         self.files_manager.write_csv_safely(df, file_path)
 
 if __name__ == '__main__':
-    # video_id = 'dMMHSXn9pow'
-    yt = YouTubeManager()
-    response_mn =  response_manager()
-    video_id = '7hzS3Wlnx2A'
-    response = yt.get_response_video_id(video_id)
-    video_id_info = response_mn.get_video_info(response)
-    # video_id_info['file_path'] = file_path
-    # video_id_info['response'] = response
-    video_id_info['response'] = response
-    print(video_id_info['response']['items'])
+    pass
     

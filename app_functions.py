@@ -4,7 +4,7 @@ import requests
 from bs4 import BeautifulSoup
 # from urllib.parse import urlparse, parse_qs
 from pathlib import Path
-from YouTube import yt_url
+# from YouTube import yt_url
 
 def clear_terminal() -> None:
     # Check operating system and use the appropriate command
@@ -83,7 +83,7 @@ def is_short(video_id: str) -> bool | None:
     else:
         return  # Unexpected case
 
-def create_bookmarks(urls: dict, file_path: str = "bookmarks.html", partial_url: str = yt_url):
+def create_bookmarks(urls: dict, file_path: str = "bookmarks.html", partial_url: str = "",b_title = "Bookmarks"):
     #Dictionary: key = partial_url, value = 
     file_path_obj = Path(file_path)
     
@@ -115,7 +115,7 @@ def create_bookmarks(urls: dict, file_path: str = "bookmarks.html", partial_url:
         '<!DOCTYPE NETSCAPE-Bookmark-file-1>',
         '<META HTTP-EQUIV="Content-Type" CONTENT="text/html; charset=UTF-8">',
         '<TITLE>Bookmarks</TITLE>',
-        '<H1>Bookmarks</H1>',
+        f'<H1>{b_title}</H1>',
         '<DL><p>'
     ]
 
@@ -132,7 +132,8 @@ def create_bookmarks(urls: dict, file_path: str = "bookmarks.html", partial_url:
 
 
 if __name__ == '__main__':
+    pass
     #
-    urls = {}
-    file_path = Path('jalasuefitness.html')
-    create_bookmarks(file_path, urls)
+    # urls = {}
+    # file_path = Path('jalasuefitness.html')
+    # create_bookmarks(file_path, urls)

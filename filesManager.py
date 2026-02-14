@@ -210,14 +210,7 @@ if __name__ == "__main__":
     fm = filesManager()
     df= fm.YT_content_creators
     handles = df['Handle'].values
-    for file in content_creator_folder.rglob('*.txt'):
-        if file.stem not in handles:
-            try:
-                file.unlink()
-                print(f'The file {file.name} was deleted')
-            except:
-                print(f'Unable to delete {file.name}')
-
+    print('JannaBreslin'.lower() in handles)
 
 
   
