@@ -255,10 +255,10 @@ def main():
             # try:
             if video_id not in handle_ids:
                 response = yt.get_response_video_id(video_id)
-                if not response:
+                video_id_info = response_mnr.get_video_info(response)
+                if not video_id_info:
                     files_manager.add_element_to_file(file_path, video_id, False)
                     continue    
-                video_id_info = response_mnr.get_video_info(response)
                 video_id_info['file_path'] = file_path
                 video_id_info['response'] = response
 
