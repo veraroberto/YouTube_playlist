@@ -20,7 +20,7 @@ YouTube.ipynb
 YT_files_manager.ipynb
 .ipynb_checkpoints/
 *.ipynb_checkpoints
-tests.py
+*tests*
 *.html
 *.json
 environment.local.yml

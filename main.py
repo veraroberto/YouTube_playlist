@@ -199,13 +199,22 @@ def main():
     print(f'The saved quota was: {saved_quota:,}')
     if not_in_df:
         print('Handles not in Data Frame')
-        for response in not_in_df:
+        not_in_df_dict = {}
+        for index, response in enumerate(not_in_df,1):
             video_info = response_mnr.get_video_info(response)
-            print(f"\t{video_info['title']}")
-            print(f"\t{video_info['channelTitle']}")
-            print(f"\t{video_info['publishedAt']}")
-            print(f"\t{yt_url}{video_info['video_id']}")
+            title = video_info['title']
+            channelTitle = video_info['channelTitle']
+            publishedAt = video_info['publishedAt']
+            video_id = video_info['video_id']
+            print(f"\t{title}")
+            print(f"\t{channelTitle}")
+            print(f"\t{publishedAt}")
+            print(f"\t{yt_url}{video_id}")
+            not_in_df_dict[video_id] = f'{index:02d} {publishedAt} {title}'
             print('*'*50)
+        today = date.today()
+        formatted_date = today.strftime("%Y-%m-%d")
+        create_bookmarks(not_in_df_dict,f'{formatted_date} Videos not in DF.html',yt_url,"Not in DF")
 
     if manually_added:
         print('Videos IDs that were manually added to any playlist')
@@ -307,7 +316,7 @@ def main():
         print('There is an error with the request function. You might be blocked')
         pass
 
-    quota_limit = 9000
+    quota_limit = 9700
     was_braked = False
     message = ''
     added_videos = defaultdict(list)
