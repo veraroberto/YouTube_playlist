@@ -27,6 +27,7 @@ class YouTubeManager:
     def __init__(self):
         # 1. Store the paths
         self.files_manager = filesManager()
+        self.response_mng = response_manager()
  
         # 2. Authenticate and store the 'youtube' client as 'self.youtube'
         self.youtube = self._authenticate()
@@ -264,70 +265,54 @@ class YouTubeManager:
         self.files_manager.add_to_today_quota(1)
         return response
 
+    def get_all_handles_from_playlist(self, playlist_id: str) -> dict:
+        df = self.files_manager.YT_content_creators
+        video_ids = yt.get_all_ids_playlist(playlist_id, 20)
+        print(f'There are {len(video_ids)} in the playlist')
+        handles_playlist = defaultdict(list)
+        for video_id in video_ids:
+            response = self.get_response_video_id(video_id)
+            video_info = self.response_mng.get_video_info(response)
+            if not video_id:
+                continue
+
+            channelId = video_info['channelId']
+            if channelId in df['channelId'].values:
+                handle = df[df['channelId'] == channelId]['Handle'].iloc[0]
+            else:
+                channel_response = self.get_channel_response(channelId)
+                channel_info = self.response_mng.get_channel_info(channel_response)
+                handle = channel_info['customUrl']
+            if video_info not in handles_playlist[handle]:
+                handles_playlist[handle].append(video_info)
+        frozenset
+        return handles_playlist
 if __name__ =='__main__':
     yt = YouTubeManager()
     fm = filesManager()
     resp_mng = response_manager()
     df = fm.YT_content_creators
 
+    playlist_id = 'PLpLSuxy9E5Pzwy0b7Z0D_fWIXmtsEvaC-'
+    handles_dict = yt.get_all_handles_from_playlist(playlist_id)
+    align = max(len(h) for h in handles_dict)
+    sorted_handles = sorted(handles_dict, key= lambda x: len(handles_dict[x]), reverse=True)
+    for handle in sorted_handles:
+        key = f'{handle}:'
+        print(f'{key:<{align+1}} {len(handles_dict[handle]):>{2}}')
 
-    # video_id = '7hTzFn83h4g'
-    # res = yt.get_response_video_id(video_id)
-    # video_info = resp_mng.get_video_info(res)
-    # channelId = video_info['channelId']
-    # print(channelId)
-    # print(channelId in df['channelId'].values)
-    # handle = df[df['channelId'] == channelId]['Handle'].iloc[0]
-    # print(handle)
-
-    playlist_names = yt.get_all_playlists()
-
-    youtube_names = [file.stem.replace('_', ' ').strip() for file in playlist_folder.iterdir() if file.suffix == '.txt']
-    align = max(len(p) for p in youtube_names)
-    num_videos = 0
-    playlist_dict = defaultdict(list)
-    for playlist in youtube_names:
-        playlist_id = next((d["id"] for d in playlist_names if playlist in d.values()), None)
-        
-        if playlist_id:
-            video_ids = yt.get_all_ids_playlist(playlist_id, 20, False)
-            # print(f'{playlist:<{align}} {len(video_ids):03d} {playlist_id}')
-            for video_id in video_ids:
-                res = yt.get_response_video_id(video_id)
-                video_info = resp_mng.get_video_info(res)
-                if not video_info:
-                    print(video_id)
-                    continue
-                channelId = video_info['channelId']
-                if channelId in df['channelId'].values:
-                    handle = df[df['channelId'] == channelId]['Handle'].iloc[0]
-                else:
-                    handle = 'Not in DataFrame'
-                playlist_dict[handle].append(video_id)
-            num_videos += len(video_ids)
-    print(f'There are {num_videos} videos in all the playlist')
+        for video in handles_dict[handle]:
+            for key in video:
+                print(f'{key}: {video[key]}')
+   
+            print('*'*50)
+        print('+'*70)
+    # sorted_handles = sorted(handles_playlist, key= lambda x: len(handles_playlist[x]), reverse=True)
     
-    file_path = f'count_handles.json'
-    with open(file_path, "w", encoding="utf-8") as f:
-        json.dump(playlist_dict, f, ensure_ascii=False, indent=4)
+    # for hand in sorted_handles:
+    #     curstmURL = f'{hand}:'
+    #     print(f'{curstmURL:<{align + 1}} {len(handles_playlist[hand]):>{2}}')
+    
+    
 
-
-
-    # subs = yt.get_subscriptions()   
-    # missing_sub = {}
-    # for s in subs:
-    #     snippet = s['snippet']
-    #     resourceId = snippet['resourceId']
-    #     channelId = resourceId['channelId']
-    #     title = snippet['title']
-    #     if channelId not in channelId_df:
-    #         missing_sub[channelId] = title
-    # align = max(len(t) for t in missing_sub.values())
-    # for m in missing_sub:
-    #     print(f'{missing_sub[m]:<{align}} {yt_channel}{m}')
-    # create_bookmarks(missing_sub, f'missing_sub.html', yt_channel)
-
-
-
-
-
+    

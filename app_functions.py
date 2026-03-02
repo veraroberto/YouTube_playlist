@@ -4,6 +4,8 @@ import requests
 from bs4 import BeautifulSoup
 # from urllib.parse import urlparse, parse_qs
 from pathlib import Path
+
+from paths import content_creator_folder
 # from YouTube import yt_url
 
 def clear_terminal() -> None:
@@ -130,10 +132,20 @@ def create_bookmarks(urls: dict, file_path: str = "bookmarks.html", partial_url:
 
     print(f"🔥 Total {len(sorted_items)} bookmarks sorted and saved to: {file_path}")
 
+def search_string_folder(folder_path: Path, search_string: str) -> bool:
+    folder_path = Path(folder_path)
+    for file in folder_path.rglob('*.txt'):
+        try:
+            with file.open() as f:
+                for line in f:
+                    if search_string in line:
+                        print(f'{search_string} is already in {file.name}')
+                        return True
+        except Exception as e:
+            print(f'The file {file.name} has the error {e}')
+            continue
 
 if __name__ == '__main__':
-    pass
-    #
-    # urls = {}
-    # file_path = Path('jalasuefitness.html')
-    # create_bookmarks(file_path, urls)
+    video_id = 'zDfBrSgnf_I'
+    searched = search_string_folder(content_creator_folder, video_id)
+    print(searched)

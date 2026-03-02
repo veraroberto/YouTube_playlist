@@ -91,10 +91,10 @@ class df_manager:
             if playlist_file_path.exists():
                 print(f'The new Playlist: {new_playlist_name} is already in the files.')
             else:
-                  self.files_manager.add_element_to_file(playlist_file_path, handle, sort_list=False, print_statement=False)
+                  self.files_manager.add_element_to_file(playlist_file_path, handle, sort_list=True, print_statement=False)
         else:
             playlist_file_path = playlist_folder / f'{handle_playlist.replace(" ","_")}.txt'
-            self.files_manager.add_element_to_file(playlist_file_path, handle, sort_list=False)
+            self.files_manager.add_element_to_file(playlist_file_path, handle, sort_list=True)
         video_ids_yt = self.yt.get_all_ids_playlist(uploads, 200)
         if video_ids_yt:    
         # print(f'Time getting the video ids: {duration_string(time.time() - inicio)}')
@@ -175,6 +175,7 @@ class df_manager:
                           'Only some Playlist in the iteration',
                           'Remove Playlist from the iteration',
                           'Only search for some Handles',
+                          'Add to files the videos that were manually added to the Playlists',
                           'Exit Process']
         search_handles = choose_option(search_options, 'Search for a Particular Handles')
         
@@ -223,7 +224,11 @@ class df_manager:
                     print(f'Handles to be include in the DataFrame: {", ".join(sorted(handles_filter))}')
                     break
             YT_content_creators_iter = YT_content_creators[YT_content_creators['Handle'].isin(handles_filter)].reset_index(drop=True)
-        elif search_handles == search_options[5]:
+        elif search_handles == search_options[5]: # Retrun an empty DataFrame
+            YT_content_creators_iter = YT_content_creators.head(0)
+            
+        
+        elif search_handles == search_options[6]:
             return None
         
         return YT_content_creators_iter

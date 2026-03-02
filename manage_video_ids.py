@@ -1,6 +1,7 @@
 from pathlib import Path
 from urllib.parse import urlparse, parse_qs
-from app_functions import (choose_option)
+from app_functions import (choose_option, 
+                           search_string_folder)
 from paths import (content_creator_folder,
                    exception_folder)
 
@@ -23,22 +24,29 @@ def get_playlist_id(url: str) -> str:
     query = parse_qs(parsed.query)
     return query.get("list", [0])[0]  # default to 0 if missing
 
-def add_video_manually(YouTubeManager: classmethod, filesManager: classmethod, url: str) -> None:
+def add_video_manually(YouTubeManager: classmethod, response_manager: classmethod, filesManager: classmethod, url: str) -> None:
     if url is None:
         video_id = get_video_id(input('Video ID to add a file: '))
     else:
         video_id = get_video_id(url.strip())
         if video_id == 0:
             print(f'{url} is not a valid url or video id')
+            return
+    if search_string_folder(content_creator_folder, video_id):
+        return
     response = YouTubeManager.get_response_video_id(video_id)
-    items = response.get('items', [])
-    if not items:
+    
+    video_info = response_manager.get_video_info(response)
+    if not video_info:
         print(f'Video ID {video_id} does not have any information')
         return
     
-    channelId = items[0]['snippet']['channelId']
+
+    channelId = video_info['channelId']
     response_channel = YouTubeManager.get_channel_response(channelId)
-    handle = response_channel['items'][0]['snippet']['customUrl'].replace('@', '')
+    channel_info =  response_manager.get_channel_info(response_channel)
+    handle = channel_info['customUrl']
+    
     handle_file_path = content_creator_folder / f'{handle}.txt'
     if handle_file_path.exists():
         print(handle_file_path)

@@ -208,9 +208,7 @@ class filesManager:
 
 if __name__ == "__main__":
     fm = filesManager()
-    df= fm.YT_content_creators
-    handles = df['Handle'].values
-    print('JannaBreslin'.lower() in handles)
+
 
 
   

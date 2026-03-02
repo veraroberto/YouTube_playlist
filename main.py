@@ -66,10 +66,11 @@ def main():
 
     elif args.command == "add-video":
         while True:
-            add_video_manually(yt, 
-                            files_manager, 
-                            url=args.video_id, 
-                            )
+            add_video_manually(yt,
+                               response_mnr,
+                               files_manager,
+                               url=args.video_id,
+                               )
             if not choose_option([True, False], message="Add another video ID: "):
                 break
         return
@@ -105,14 +106,11 @@ def main():
                 break
         return
 
-
     YT_content_creators_iter = df_mnr.get_df_to_iterate(playlist_folder, files_manager.YT_content_creators)
     if YT_content_creators_iter is None:
         print("Doing Nothing")
         return
-    # yt_channel = 'https://www.youtube.com/channel/'
-
-
+    
     ## Creates the Dictionary of the Playlists
     playlist_names = yt.get_all_playlists()
     youtube_names = [file.stem.replace('_', ' ').strip() for file in playlist_folder.iterdir() if file.suffix == '.txt']
@@ -173,6 +171,10 @@ def main():
     more_iterations = files_manager.get_elements_from_file(more_iterations_path, create_file=True)    
 
     missing_video_ids = files_manager.find_missing_elements(all_ids_from_playlist)
+    
+    vertical_video_id
+    missing_video_ids = [x for x in missing_video_ids if x not in vertical_video_id]
+    
     if missing_video_ids:
         print(f'There are {len(missing_video_ids)} videos not in the files')
 

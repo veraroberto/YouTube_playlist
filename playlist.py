@@ -4,11 +4,13 @@ from filesManager import filesManager
 from YouTube import yt_url
 
 from app_functions import (choose_option,
-                           duration_string)
+                           duration_string,
+                           clear_terminal)
 
 
 from collections import defaultdict
 import time
+import json
 
 class PlaylistManager():
     
@@ -22,13 +24,15 @@ class PlaylistManager():
         
     def move_video_to_playlist(self, quota_limit: int = 8000) -> None:
         
-        playlist_handles = defaultdict(list)
+        
         playlist_names =self.yt.get_all_playlists()
         playlist_chosen = choose_option(playlist_names, "Choose Origin Playlist")
         playlist_names.remove(playlist_chosen)
         source_id = playlist_chosen['id']
+        print(source_id)
         source_name = playlist_chosen['name']
-        sorted_keys = list(self.count_handles_playlist(source_id).keys())
+        count_handles = self.count_handles_playlist(source_id)
+        sorted_keys = list(count_handles.keys())
         move_handles = []
         while True:
             choose_key = choose_option(sorted_keys, "Choose a Handle to move")
@@ -59,7 +63,8 @@ class PlaylistManager():
             destination_id = destination['id']
             destination_name = destination['name']
         print(f'Destination playlist is {destination_name} with the ID is {destination_id}')
-        num_videos = sum(len(playlist_handles[handle]) for handle in move_handles)
+       
+        num_videos = sum(len(count_handles[handle]) for handle in move_handles)
         to_consume = num_videos * 101 # 1 quota min to find the video in the playlist. 50 to delete and 50 to add 
         current_quota = self.files_manager.get_today_quota()
         message_parts =  [f"Are you sure you want to continue.",
@@ -70,19 +75,27 @@ class PlaylistManager():
             print('Not moving any video')
             return
         start_moving = time.time()
+        
         for i, h in enumerate(move_handles, 1):
             print(f'Moving the videos from {h}')
-            video_ids = playlist_handles[h]
-            for video_id_to_move in video_ids:
+            video_ids = count_handles[h]
+            
+            for index, video_id_to_move in enumerate(video_ids, 1):
                 # print(f'{i:02d} {video_id}')
+                
+                v_id = self.response_mnr.get_video_info(video_id_to_move)['video_id']
                 if self.files_manager.get_today_quota() > quota_limit:
+                    
                     print(f"Stopping the Processs to prevent the quota surpass {quota_limit:,}")
                     return
-                if self.yt.delete_video_id_from_playlist(source_id, video_id_to_move, print_message = False) is None:
-                    print(f"There is a problem deleting {video_id_to_move} from {source_name}. Stopping Everything.")
+                if self.yt.delete_video_id_from_playlist(source_id, v_id, print_message = False) is None:
+                    # clear_terminal()
+                    print(source_id)
+                    print(video_id_to_move)
+                    print(f"There is a problem deleting {v_id} from {source_name}. Stopping Everything.")
                     return
-                if self.yt.add_video_to_playlist(destination_id, video_id_to_move) is None:
-                    print(f"There is a problem adding {video_id_to_move} to {destination_name}. Stopping Everything.")
+                if self.yt.add_video_to_playlist(destination_id, v_id) is None:
+                    print(f"There is a problem adding {v_id} to {destination_name}. Stopping Everything.")
         total_duration = time.time() - start_moving
         print(f'Total duration of the moving process => {duration_string(total_duration)}')      
 
@@ -115,39 +128,12 @@ class PlaylistManager():
 
 if __name__ =='__main__':
     import json
+    import isodate
+
     pm = PlaylistManager()
-    response_mng = response_manager()
-    # playlist_id = 'PLpLSuxy9E5PzxURBwG1_KnFrp5hDrVMr0'
-    # pm.count_handles_playlist(playlist_id)
-    # pm.move_video_to_playlist(6500) 
-    # playlist_id = 'PLpLSuxy9E5Pw3e_W2DwHvh2z3KTjL5ZKE'
-
-    # response_dict = pm.count_handles_playlist(playlist_id)
-    # file_path = 'Cine_Playlist.json'
-    # with open(file_path, 'w', encoding="utf-8") as json_file:
-    #     json.dump(response_dict, json_file, indent=4)
-    # with open(file_path, mode = 'r', encoding="utf-8") as json_file:
-    #     playlists_names = json.load(json_file)
-    # # print(playlists.keys())
-    # align = max(len(playlist) for playlist in playlists_names)
-    # playlists_names_sort = sorted(playlists_names, key = lambda x: len(playlists_names[x]), reverse=True)
-    # for playlist in playlists_names_sort:
-    #     responses = playlists_names[playlist]
-    #     # label = f'{playlist}:'.ljust(align + 1)
-    #     # count = f'{len(responses)}'.rjust(2)
-    #     # print(f'{label} {count}')
-
-    #     print(playlist)
-    #     for response in responses:
-    #         video_info = response_mng.get_video_info(response)
-    #         title = video_info['title']
-    #         publishedAt = video_info['publishedAt']
-    #         video_id = video_info['video_id']
-    #         message = f"{yt_url}{video_id}: {publishedAt} {title[0:70]}"
-    #         print(message[0:114])
-    #     print('*'*50)
-
-      
-
+    pm.move_video_to_playlist(8000)
+    yt = YouTubeManager()
+    # yt.delete_video_id_from_playlist()
+    
 
         
