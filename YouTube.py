@@ -7,7 +7,8 @@ from API_KEY import api_key
 import requests
 import json
 
-from app_functions import create_bookmarks
+from app_functions import (create_bookmarks,
+                           duration_string)
 from filesManager import filesManager
 from collections import defaultdict
 from paths import (tokens_folder,
@@ -158,7 +159,7 @@ class YouTubeManager:
         """Create a private playlist on YouTube."""
         try:
             request = self.youtube.playlists().insert(
-                part="snippet,status",
+                part="snippet,status,contentDetails",
                 body={
                     "snippet": {
                         "title": title,
@@ -185,7 +186,7 @@ class YouTubeManager:
         """Add a video to a playlist."""
         try:
             request = self.youtube.playlistItems().insert(
-                part="snippet",
+                part="snippet,contentDetails",
                 body={
                     "snippet": {
                         "playlistId": playlist_id,  # The ID of the playlist
@@ -267,7 +268,7 @@ class YouTubeManager:
 
     def get_all_handles_from_playlist(self, playlist_id: str) -> dict:
         df = self.files_manager.YT_content_creators
-        video_ids = yt.get_all_ids_playlist(playlist_id, 20)
+        video_ids = self.get_all_ids_playlist(playlist_id, 20)
         print(f'There are {len(video_ids)} in the playlist')
         handles_playlist = defaultdict(list)
         for video_id in video_ids:
@@ -287,32 +288,26 @@ class YouTubeManager:
                 handles_playlist[handle].append(video_info)
         frozenset
         return handles_playlist
+
+    def get_playlist_duration(self, playlist_id: str) -> float:
+        playlist_response = self.get_response_from_playlist_id(playlist_id)  
+        playlist_info = self.response_mng.get_playlist_info(playlist_response)
+        title = playlist_info['title']
+        video_ids = self.get_all_ids_playlist(playlist_id, 100)
+        total_duration = 0
+        
+        for video_id in video_ids:
+            response = self.get_response_video_id(video_id)
+            video_info = self.response_mng.get_video_info(response)
+            total_duration += video_info['duration']
+        
+        print(f'{title} => {len(video_ids)} | {duration_string(total_duration)}')
+        return total_duration
+
 if __name__ =='__main__':
-    yt = YouTubeManager()
-    fm = filesManager()
-    resp_mng = response_manager()
-    df = fm.YT_content_creators
-
-    playlist_id = 'PLpLSuxy9E5Pzwy0b7Z0D_fWIXmtsEvaC-'
-    handles_dict = yt.get_all_handles_from_playlist(playlist_id)
-    align = max(len(h) for h in handles_dict)
-    sorted_handles = sorted(handles_dict, key= lambda x: len(handles_dict[x]), reverse=True)
-    for handle in sorted_handles:
-        key = f'{handle}:'
-        print(f'{key:<{align+1}} {len(handles_dict[handle]):>{2}}')
-
-        for video in handles_dict[handle]:
-            for key in video:
-                print(f'{key}: {video[key]}')
-   
-            print('*'*50)
-        print('+'*70)
-    # sorted_handles = sorted(handles_playlist, key= lambda x: len(handles_playlist[x]), reverse=True)
+    pass
     
-    # for hand in sorted_handles:
-    #     curstmURL = f'{hand}:'
-    #     print(f'{curstmURL:<{align + 1}} {len(handles_playlist[hand]):>{2}}')
-    
+
     
 
     

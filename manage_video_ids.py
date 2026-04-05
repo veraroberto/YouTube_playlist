@@ -1,7 +1,8 @@
 from pathlib import Path
 from urllib.parse import urlparse, parse_qs
 from app_functions import (choose_option, 
-                           search_string_folder)
+                           search_string_folder,
+                           duration_string)
 from paths import (content_creator_folder,
                    exception_folder)
 
@@ -49,7 +50,17 @@ def add_video_manually(YouTubeManager: classmethod, response_manager: classmetho
     
     handle_file_path = content_creator_folder / f'{handle}.txt'
     if handle_file_path.exists():
-        print(handle_file_path)
+        align = max(len(key) for key in video_info)
+        for key in video_info:
+            k = f'{key}:'
+            if not video_info[key] or video_info[key] == 'none':
+                continue
+            elif key == 'duration':
+                duration = duration_string(video_info[key])
+                print(f'{k:<{align}} {duration}')
+            else:
+                print(f'{k:<{align}} {video_info[key]}')
+        print('*'*75)
         filesManager.add_element_to_file(handle_file_path, video_id, True, True)
     else:
         
@@ -72,6 +83,4 @@ def manage_exceptions(filesManager: classmethod) -> None:
 
 
 if __name__ == "__main__":
-    url = 'PLiNo79GXtxAs0UUxvNczk6lB9IoBsjgYO'
-    playlist_id = get_playlist_id(url)
-    print(playlist_id)
+    pass

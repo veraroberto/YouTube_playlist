@@ -56,7 +56,7 @@ class filesManager:
             self.YT_content_creators = pd.DataFrame(columns=columns_df)          
         
     def write_csv_safely(self, df: pd.DataFrame, filename: Path) -> None:
-        with open(filename, 'w', newline='', encoding='utf-8') as f:
+        with open(filename, 'w', newline='', encoding='utf-8-sig') as f:
             df.to_csv(f, index=False, date_format="%Y-%b-%d")
 
     def add_to_today_quota(self, new_quota: int) -> None:
@@ -142,8 +142,6 @@ class filesManager:
         if not file_path.exists() and not create_file:
             print('File does not exists')
             return
-  
-
         elements_file = self.get_elements_from_file(file_path)
         
         # Track if we actually added anything to avoid unnecessary disk writes
@@ -166,8 +164,10 @@ class filesManager:
             
         return elements_file
 
-    def add_element_to_file(self, file_path: Path, element: str,
-                            sort_list: bool = True, print_statement: bool = False) -> None:
+    def add_element_to_file(self, file_path: Path, 
+                            element: str,
+                            sort_list: bool = True,
+                            print_statement: bool = False) -> None:
         file_path = Path(file_path).with_suffix('.txt')
         elements = self.get_elements_from_file(file_path)
         
@@ -207,7 +207,7 @@ class filesManager:
 
 
 if __name__ == "__main__":
-    fm = filesManager()
+    pass
 
 
 

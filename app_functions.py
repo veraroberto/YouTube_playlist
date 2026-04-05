@@ -64,9 +64,12 @@ def duration_string(duration: float | int) -> str:
     else:
         print(f'{duration} is not a number')
 
-def is_short(video_id: str) -> bool | None:
+def is_short_1(video_id: str) -> bool | None:
+    headers = {
+    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
+    }
     url = f'https://www.youtube.com/shorts/{video_id}'
-    response = requests.get(url, allow_redirects=True)
+    response = requests.get(url, headers=headers, allow_redirects=True)
     if response.status_code == 429:
         print("Too many requests — you've hit a rate limit.")
         return 
@@ -84,6 +87,44 @@ def is_short(video_id: str) -> bool | None:
         return True
     else:
         return  # Unexpected case
+
+def is_short(video_id: str) -> bool | None:
+    url = f'https://www.youtube.com/shorts/{video_id}'
+    
+    # We use a browser-like User-Agent so YouTube doesn't see us as a script
+    headers = {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+    }
+
+    try:
+        # allow_redirects=False is CRITICAL. It stops us from following the link
+        # so we can see if YouTube TRIED to redirect us.
+        response = requests.head(url, headers=headers, allow_redirects=False, timeout=10)
+        
+        # 200 means it stayed at the /shorts/ URL. It's a Short!
+        if response.status_code == 200:
+            return True
+        
+        # 301, 302, or 303 means it's trying to send you to /watch. Not a Short!
+        elif 300 <= response.status_code < 400:
+            return False
+        
+        # 404 means the video doesn't exist at all
+        elif response.status_code == 404:
+            print(f"Video {video_id} not found (404).")
+            return None
+
+        # 429 means you are officially being throttled again
+        elif response.status_code == 429:
+            print("Rate limit hit (429). You should stop the script for a while.")
+            return None
+
+    except requests.RequestException as e:
+        # This prints the name of the error (Timeout, ConnectionError, etc.)
+        print(f"Network error checking {video_id}: {type(e).__name__}")
+        return None
+
+    return None
 
 def create_bookmarks(urls: dict, file_path: str = "bookmarks.html", partial_url: str = "",b_title = "Bookmarks"):
     #Dictionary: key = partial_url, value = 
@@ -146,6 +187,4 @@ def search_string_folder(folder_path: Path, search_string: str) -> bool:
             continue
 
 if __name__ == '__main__':
-    video_id = 'zDfBrSgnf_I'
-    searched = search_string_folder(content_creator_folder, video_id)
-    print(searched)
+    pass

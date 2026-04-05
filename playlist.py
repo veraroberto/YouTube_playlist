@@ -124,16 +124,9 @@ class PlaylistManager():
 
         return playlist_handle
     
-
+    
 
 if __name__ =='__main__':
-    import json
-    import isodate
-
-    pm = PlaylistManager()
-    pm.move_video_to_playlist(8000)
-    yt = YouTubeManager()
-    # yt.delete_video_id_from_playlist()
-    
+    pass
 
         

@@ -18,6 +18,7 @@ import re
 import pyperclip
 from datetime import date
 import json
+import random
 
 from app_functions import (choose_option,
                            clear_terminal,
@@ -80,6 +81,7 @@ def main():
         links_list = pyperclip.paste().splitlines()
         for video_id in links_list:
             add_video_manually(yt,
+                               response_mnr,
                                files_manager,
                                url=video_id
                                )
@@ -124,9 +126,8 @@ def main():
 
     shorts_playlist_name = 'Shorts To Watch'
     other_playlist_name = 'Videos To Watch'
-    WL_shorts_playlist = 'Watch Later Shorts'
     vertical_video_id = files_manager.get_elements_from_file(exception_folder / "vertical_video.txt", create_file=False)
-    special_playlist = [other_playlist_name, WL_shorts_playlist, shorts_playlist_name]
+    special_playlist = [other_playlist_name, shorts_playlist_name]
     # youtube_names.extend({'Path': None, 'Name': playlist} for playlist in special_playlist)
     youtube_names.extend(special_playlist)
 
@@ -147,7 +148,6 @@ def main():
     all_ids_from_playlist = [video_id for playlist in youtube_playlists.values() for video_id in playlist['video_ids']]
     print(f'There are {len(all_ids_from_playlist):,} videos in all the playlists')
 
-
     ## Exceptions
     skip_handle_shorts_path = exception_folder / 'skip_shorts_handle.txt'
     skip_shorts_handle = files_manager.get_elements_from_file(skip_handle_shorts_path)
@@ -163,9 +163,6 @@ def main():
 
     only_add_long_videos_path = exception_folder / 'only_add_long_videos.txt'
     only_long_videos = files_manager.get_elements_from_file(only_add_long_videos_path, create_file = True)
-
-    WL_shorts_path = exception_folder / 'WL_shorts.txt'
-    WL_shorts = files_manager.get_elements_from_file(WL_shorts_path, create_file = True)
 
     more_iterations_path = exception_folder / "more_iterations.txt"
     more_iterations = files_manager.get_elements_from_file(more_iterations_path, create_file=True)    
@@ -239,8 +236,8 @@ def main():
     liveStream = []
     start = time.time()
     for row in YT_content_creators_iter.itertuples():
-        # if was_braked:
-        #     break
+        if was_braked:
+            break
         handle = row.Handle
         channelName = row.channelName
         channelId = row.channelId
@@ -252,7 +249,7 @@ def main():
         iterations = 1
         if handle in more_iterations:
             """
-            In some Podcast the IDs are not sorted by by date in descending order, so it would need
+            In some Podcasts the IDs are not sorted by by date in descending order, so it would need
             more iterations to get the new video IDs
             """ 
             iterations = 10
@@ -289,12 +286,12 @@ def main():
                     files_manager.add_element_to_file(file_path,video_id, False)
                 else:
                     short = is_short(video_id)
+                    time.sleep(random.uniform(0.5, 1.5))
                     if short is None:
                         was_braked = True
+                        break
                     elif short is True:
-                        if handle in WL_shorts:
-                            youtube_playlists[WL_shorts_playlist]['new_video_ids'].append(video_id_info)
-                        elif handle not in skip_shorts_handle:
+                        if handle not in skip_shorts_handle:
                             youtube_playlists[shorts_playlist_name]['new_video_ids'].append(video_id_info)
                         else:
                             files_manager.add_element_to_file(file_path,video_id, False)
@@ -304,7 +301,8 @@ def main():
                         youtube_playlists[other_playlist_name]['new_video_ids'].append(video_id_info)
 
         if was_braked:
-            pass
+            break
+
 
     print(" "*len(message), end='\r')
     print(f'Duration to getting the new IDs => {duration_string(time.time() - start)}')
@@ -319,7 +317,7 @@ def main():
         pass
 
     quota_limit = 9700
-    was_braked = False
+    # was_braked = False
     message = ''
     added_videos = defaultdict(list)
     not_added_videos = defaultdict(list)
@@ -368,7 +366,7 @@ def main():
                     pass
     print(' '*len(message), end='\r')         
     if was_braked:
-        print(f'The process was interrupted. The last video is was {video_id} from {file_path.name}')
+        print(f'The process was interrupted. The last video is {video_id} from {file_path.name}')
 
     consumed_quota = files_manager.get_today_quota(False) - quota_i
     print(f'It was consumed {consumed_quota:,} quotas in the adding process and the final quota is {files_manager.get_today_quota(False):,}')
@@ -406,50 +404,20 @@ def main():
 
 
 if __name__ == "__main__":
-
-    today = date.today()
-
-# Format as MM/DD/YYYY
-    formatted_date = today.strftime("%Y-%m-%d")
-
     not_added_videos = main()
-
     if not_added_videos:
-        # Create a cleaned copy of the dictionary without 'file_path'
-        cleaned_videos = {
-        category: [
-            {k: v for k, v in video.items() if k != 'file_path'}
-            for video in video_list
-        ]
-        for category, video_list in not_added_videos.items()
-        }
-        urls_files = html_folder / f"{formatted_date}_urls.json"
-        # Now save the cleaned dictionary
-        with open(urls_files, "w", encoding="utf-8") as f:
-            json.dump(cleaned_videos, f, ensure_ascii=False, indent=4)
-        
         today = date.today()
         formatted_date = today.strftime("%Y-%m-%d")
-        todays_file = f'{formatted_date}_urls.json'
-
-        with open(urls_files, "r", encoding="utf-8") as f:
-            todays_playlist = json.load(f)
-        if todays_playlist:
-            print('The follwoing playlist html files were created:')
-            for pl_index, playlist in enumerate(todays_playlist, 1):
-                print(f'{pl_index:02d} {playlist}')
-                urls_dict = {}
-                todays_video = todays_playlist[playlist]
-                todays_video.sort(key = lambda x: x['response']['items'][0]['snippet']['publishedAt'])
-                for index, video in enumerate(todays_video, 1):
-                    publishedAt = video['response']['items'][0]['snippet']['publishedAt']
-                    title = video['title']
-                    video_id = video['video_id']
-                    urls_dict[video_id] = f'{index:02d} {title}'
-                file_html = html_folder / f'{formatted_date}_{playlist.replace(" ", "_")}.html'
-                create_bookmarks(urls_dict, file_html, yt_url,playlist)
-
- 
-
-
-            
+        print('The follwoing playlist html files were created:')
+        for pl_index, playlist in enumerate(not_added_videos, 1):
+            print(f'{pl_index:02d} {playlist}')
+            urls_dict = {}
+            todays_video = not_added_videos[playlist]
+            todays_video.sort(key = lambda x: x['response']['items'][0]['snippet']['publishedAt'])
+            for index, video in enumerate(todays_video, 1):
+                publishedAt = video['response']['items'][0]['snippet']['publishedAt']
+                title = video['title']
+                video_id = video['video_id']
+                urls_dict[video_id] = f'{index:02d} {title}'
+            file_html = html_folder / f'{formatted_date}_{playlist.replace(" ", "_")}.html'
+            create_bookmarks(urls_dict, file_html, yt_url,playlist)            

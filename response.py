@@ -95,6 +95,7 @@ class response_manager():
             print('There is not contentDetails in the Playlist')
             return
         playlist_info = {
+            'title': title,
             'customUrl': customUrl,
             'channelId': channelId,
             'channelTitle': title,

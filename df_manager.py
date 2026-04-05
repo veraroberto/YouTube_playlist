@@ -49,6 +49,7 @@ class df_manager:
             channel_response = self.yt.get_channel_response(channelId)
             info_df = self.response_mgr.get_channel_info(channel_response)                
         elif chosen == options[1]: # Handle
+            print('By handles')
             handle = remove_accents(input("New Handle: ").replace('@', "").lower().strip())
             if handle in self.YT_content_creators['Handle'].values:
                 print(f'Handle {handle} is already in the DataFrame')
@@ -56,6 +57,7 @@ class df_manager:
             else:
                 print(f'{handle} is going to be added to the Data Frame')
                 channel_response = self.yt.get_response_channel_by_handle(handle)
+                
                 info_df = self.response_mgr.get_channel_info(channel_response)
         elif chosen == options[2]: # Channel ID
             channelId = input('Add a new Row by channelId: ')
@@ -234,8 +236,4 @@ class df_manager:
         return YT_content_creators_iter
 
 if __name__ == "__main__":
-    test = df_manager()
-    fm = filesManager()
-    df = fm.YT_content_creators
-    df = test.get_df_to_iterate(playlist_folder, df)
-    print(df)
+    pass
