@@ -16,14 +16,15 @@ to private playlists using the YouTube Data API.
   - [2. Run the program](#2-run-the-program)
   - [🧰 Command Descriptions](#-command-descriptions)
 
->[!WARNING] 
- >Always make sure that you never share your `API_KEY.py` or `credentials.json` files with anyone.
 
 ## Important Notes
 
 1. To use this repository| you must generate a YouTube Data API key and create a file named `API_KEY.py`. It is also necessary to manually create the credentials.json file and store it in Tokens/. [Learn More](https://developers.google.com/youtube/registering_an_application)
 2. The YouTube API is free to use but has a daily quota limit of 10|000 units. See the [Quota Calculator](https://developers.google.com/youtube/v3/determine_quota_cost).
 3. This project is still a work in progress| and more features will be added over time.
+
+>[!WARNING] 
+ >Always make sure that you never share your `API_KEY.py` or `credentials.json` files with anyone.
 
 ## Motivation
 
@@ -57,12 +58,12 @@ python main.py <command> [options]
 
 ### 🧰 Command Descriptions
 
-| Command| Description|
-| :--- | :--- |
-quota | Displays current API quota usage
-add-video|Adds a single video to a the database.
-add-list-videos|Adds multiple videos from a list to the database.
-add-exception| Manages handles that should be excluded (e.g. shorts-only).
-not-add-videos|Runs the program to create bookmarks without adding to playlists.
-manage-df|Adds or removes channel handles in the main DataFrame.
+| Command         | Description                                                       |
+| :-------------- | :---------------------------------------------------------------- |
+| quota           | Displays current API quota usage                                  |
+| add-video       | Adds a single video to a the database.                            |
+| add-list-videos | Adds multiple videos from a list to the database.                 |
+| add-exception   | Manages handles that should be excluded (e.g. shorts-only).       |
+| not-add-videos  | Runs the program to create bookmarks without adding to playlists. |
+| manage-df       | Adds or removes channel handles in the main DataFrame.            |
 
