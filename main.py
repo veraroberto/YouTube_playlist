@@ -38,7 +38,7 @@ def main():
 
  
     subparsers = parser.add_subparsers(dest="command")
-    subparsers.add_parser("quota", help="Show today's consumed YouTube API quota")
+    subparsers.add_parser("quota", aliases=['q'], help="Show today's consumed YouTube API quota")
 
     add_parser = subparsers.add_parser("add-video", help="Manually add a video by ID to the files")
     add_parser.add_argument("--video_id", required=False, help="YouTube video ID to add (if not provided, you'll be prompted)")
@@ -60,7 +60,7 @@ def main():
     response_mnr = response_manager()
     df_mnr = df_manager()
 
-    if args.command == 'quota':
+    if args.command in ['quota', 'q']:
         files_manager = filesManager()
         files_manager.get_today_quota(True)
         return
