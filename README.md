@@ -60,7 +60,7 @@ python main.py <command> [options]
 | Command| Description|
 | :--- | :--- |
 quota | Displays current API quota usage
-add-video|Adds a single video to a playlist.
+add-video|Adds a single video to a the database.
 add-list-videos|Adds multiple videos from a list to the database.
 add-exception| Manages handles that should be excluded (e.g. shorts-only).
 not-add-videos|Runs the program to create bookmarks without adding to playlists.
