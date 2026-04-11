@@ -14,7 +14,8 @@ from collections import defaultdict
 from paths import (tokens_folder,
                    playlist_folder)
 
-
+from urllib.parse import (urlparse,
+                          parse_qs)
 from response import response_manager
 
 default_date = "2005-04-24T03:31:52Z" #Timestamp of the first YouTube video ever published 
@@ -250,13 +251,6 @@ class YouTubeManager:
         self.files_manager.add_to_today_quota(1)
         data = response.json()
         return data
-        # items = data.get('items', {})
-        # if not items:
-        #     print('There is no')
-        # channelId = data['items'][0]['id']
-        # channelTitle = data['items'][0]['snippet']['title']
-        # uploads = data['items'][0]['contentDetails']['relatedPlaylists']['uploads']
-        # return channelId, channelTitle, uploads
 
     def get_response_from_playlist_id(self, playlist_id: str) -> dict:
         response = self.youtube.playlists().list(
@@ -296,16 +290,29 @@ class YouTubeManager:
         video_ids = self.get_all_ids_playlist(playlist_id, 100)
         total_duration = 0
         
-        for video_id in video_ids:
+        for index, video_id in enumerate(video_ids, 1):
             response = self.get_response_video_id(video_id)
             video_info = self.response_mng.get_video_info(response)
+            if 'duration' not in video_info:
+                print(f'{index} {yt_url}{video_id}')
+                continue
             total_duration += video_info['duration']
         
         print(f'{title} => {len(video_ids)} | {duration_string(total_duration)}')
         return total_duration
 
 if __name__ =='__main__':
-    pass
+    yt = YouTubeManager()
+    playlist_id = input("Playlist ID: ").strip()
+    if 'youtube.com' in playlist_id:
+        parsed = urlparse(playlist_id)
+        query = parse_qs(parsed.query)
+        playlist_id = query.get("list", [0])[0]  # default to 0 if missing
+    
+    duration = yt.get_playlist_duration(playlist_id)
+    # video_id = input("Video ID: ").strip()
+    # yt.delete_video_id_from_playlist(playlist_id, video_id)
+
     
 
     

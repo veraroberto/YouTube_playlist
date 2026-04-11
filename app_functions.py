@@ -15,8 +15,10 @@ def clear_terminal() -> None:
     else:
         _ = os.system('clear')
 
-def generate_lable(options: list) -> dict:
+def generate_label(options: list) -> dict:
         option_map = {}
+        align = len(str(len(options) % 26)) + 3
+
         for i, value in enumerate(options, 1):
             label = ""
             n = i
@@ -25,7 +27,8 @@ def generate_lable(options: list) -> dict:
                 label = chr(65 + remainder) + label
             
             option_map[label] = value
-            print(f"[{label}] {value}")
+            a_label = f"[{label}]"
+            print(f"{a_label:<{4}} {value}")
         return option_map
 
 def choose_option(options: list, message: str = "Enter your choice: ") -> str | None:
@@ -37,7 +40,7 @@ def choose_option(options: list, message: str = "Enter your choice: ") -> str | 
 
     # 1. Create the mapping using the math helper
     print(f'{message}')
-    option_map = generate_lable(options)
+    option_map = generate_label(options)
   
     while True:
         choice = input("Select an option: ").strip().upper()
