@@ -12,11 +12,7 @@ Stats/
 Tokens/
 HTML/
 API_KEY.py
-added_manually_id.ipynb
-Playlist_manager.ipynb
-YouTube_fnc.py
-YouTube.ipynb
-YT_files_manager.ipynb
+*ipynb
 .ipynb_checkpoints/
 *.ipynb_checkpoints
 *test*
