@@ -67,30 +67,6 @@ def duration_string(duration: float | int) -> str:
     else:
         print(f'{duration} is not a number')
 
-def is_short_1(video_id: str) -> bool | None:
-    headers = {
-    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
-    }
-    url = f'https://www.youtube.com/shorts/{video_id}'
-    response = requests.get(url, headers=headers, allow_redirects=True)
-    if response.status_code == 429:
-        print("Too many requests — you've hit a rate limit.")
-        return 
-    elif response.status_code == 403:
-        print("Access forbidden — you may be blocked.")
-        return 
-    
-    # The final URL after redirects
-    final_url = response.url
-
-    # If it redirects to the watch URL, it's not a Short
-    if 'youtube.com/watch?v=' in final_url:
-        return False
-    elif 'youtube.com/shorts/' in final_url:
-        return True
-    else:
-        return  # Unexpected case
-
 def is_short(video_id: str) -> bool | None:
     url = f'https://www.youtube.com/shorts/{video_id}'
     
@@ -189,5 +165,22 @@ def search_string_folder(folder_path: Path, search_string: str) -> bool:
             print(f'The file {file.name} has the error {e}')
             continue
 
+def get_integer_input(prompt="Enter an integer: "):
+    while True:
+        user_input = input(f'{prompt}')
+        try:
+            return int(user_input)
+        except ValueError:
+            clear_terminal()
+            print("Invalid input. Please enter an integer.")
+
+def print_dictionary(dictionary: dict) -> None:
+    align = max(len(k) for k in dictionary)
+    for k, v in dictionary.items():
+        if k == 'duration':
+            print(f'{k+": ":<{align + 2}} {duration_string(v)}')
+        else:
+            print(f'{k+": ":<{align + 2}} {v}')
+        
 if __name__ == '__main__':
     pass

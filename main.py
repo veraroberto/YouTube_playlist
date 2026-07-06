@@ -1,9 +1,13 @@
 import argparse
-from YouTube import (YouTubeManager,
-                     yt_url)
+from YouTube import YouTubeManager
+                     
 from filesManager import filesManager
-from paths import (content_creator_folder, exception_folder,
-                   playlist_folder,restriction_folder, html_folder)
+from paths import (content_creator_folder,
+                   exception_folder,
+                   playlist_folder,
+                   restriction_folder, 
+                   html_folder,
+                   yt_url)
 # from app import app
 from response import response_manager
 
@@ -54,22 +58,22 @@ def main():
     
     args = parser.parse_args()
 
-    files_manager = filesManager()
+    fm = filesManager()
     yt = YouTubeManager()
     # functions = app()
     response_mnr = response_manager()
     df_mnr = df_manager()
 
     if args.command in ['quota', 'q']:
-        files_manager = filesManager()
-        files_manager.get_today_quota(True)
+        fm = filesManager()
+        fm.get_today_quota(True)
         return
 
     elif args.command == "add-video":
         while True:
             add_video_manually(yt,
                                response_mnr,
-                               files_manager,
+                               fm,
                                url=args.video_id,
                                )
             if not choose_option([True, False], message="Add another video ID: "):
@@ -82,13 +86,13 @@ def main():
         for video_id in links_list:
             add_video_manually(yt,
                                response_mnr,
-                               files_manager,
+                               fm,
                                url=video_id
                                )
         return
 
     elif args.command == "add-exception":
-        manage_exceptions(files_manager)
+        manage_exceptions(fm)
         return  
 
     elif args.command == "not-add-videos":
@@ -108,13 +112,14 @@ def main():
                 break
         return
 
-    YT_content_creators_iter = df_mnr.get_df_to_iterate(playlist_folder, files_manager.YT_content_creators)
+    YT_content_creators_iter = df_mnr.get_df_to_iterate(playlist_folder, fm.YT_content_creators)
     if YT_content_creators_iter is None:
         print("Doing Nothing")
         return
     
     ## Creates the Dictionary of the Playlists
     playlist_names = yt.get_all_playlists()
+
     youtube_names = [file.stem.replace('_', ' ').strip() for file in playlist_folder.iterdir() if file.suffix == '.txt']
     youtube_playlists = defaultdict(lambda:
                                     {"Handles":[],
@@ -126,7 +131,7 @@ def main():
 
     shorts_playlist_name = 'Shorts To Watch'
     other_playlist_name = 'Videos To Watch'
-    vertical_video_id = files_manager.get_elements_from_file(exception_folder / "vertical_video.txt", create_file=False)
+    vertical_video_id = fm.get_elements_from_file(exception_folder / "vertical_video.txt", create_file=False)
     special_playlist = [other_playlist_name, shorts_playlist_name]
     # youtube_names.extend({'Path': None, 'Name': playlist} for playlist in special_playlist)
     youtube_names.extend(special_playlist)
@@ -136,7 +141,6 @@ def main():
         if file_path.exists():
             handles = file_path.read_text(encoding="utf-8").splitlines()
             youtube_playlists[playlist]['Handles'].extend(handles) 
-
         #Getting the Playlist ID
         playlist_id = next((d["id"] for d in playlist_names if playlist in d.values()), None)
         youtube_playlists[playlist]['Playlist_ID'] = playlist_id
@@ -150,26 +154,24 @@ def main():
 
     ## Exceptions
     skip_handle_shorts_path = exception_folder / 'skip_shorts_handle.txt'
-    skip_shorts_handle = files_manager.get_elements_from_file(skip_handle_shorts_path)
+    skip_shorts_handle = fm.get_elements_from_file(skip_handle_shorts_path)
 
     skip_long_videos_60m_path = exception_folder / 'skip_long_videos_60m.txt'
-    skip_long_videos = files_manager.get_elements_from_file(skip_long_videos_60m_path, create_file = True)
+    skip_long_videos = fm.get_elements_from_file(skip_long_videos_60m_path, create_file = True)
 
     skip_live_handle = exception_folder /'skip_live_handle.txt'
-    skip_liveStreamingDetails_handle = files_manager.get_elements_from_file(skip_live_handle, create_file = True)
+    skip_liveStreamingDetails_handle = fm.get_elements_from_file(skip_live_handle, create_file = True)
 
     skip_title_path = exception_folder /'skip_title.txt'
-    titles_list = files_manager.get_elements_from_file(skip_title_path, create_file = True)
+    titles_list = fm.get_elements_from_file(skip_title_path, create_file = True)
 
     only_add_long_videos_path = exception_folder / 'only_add_long_videos.txt'
-    only_long_videos = files_manager.get_elements_from_file(only_add_long_videos_path, create_file = True)
+    only_long_videos = fm.get_elements_from_file(only_add_long_videos_path, create_file = True)
 
     more_iterations_path = exception_folder / "more_iterations.txt"
-    more_iterations = files_manager.get_elements_from_file(more_iterations_path, create_file=True)    
+    more_iterations = fm.get_elements_from_file(more_iterations_path, create_file=True)    
 
-    missing_video_ids = files_manager.find_missing_elements(all_ids_from_playlist)
-    
-    vertical_video_id
+    missing_video_ids = fm.find_missing_elements(all_ids_from_playlist)
     missing_video_ids = [x for x in missing_video_ids if x not in vertical_video_id]
     
     if missing_video_ids:
@@ -186,12 +188,13 @@ def main():
             continue
         snippet = items[0].get('snippet', {})
         channelId = snippet.get('channelId', "")
-        if channelId in files_manager.YT_content_creators['channelId'].values:
-            handle = files_manager.YT_content_creators[files_manager.YT_content_creators['channelId'] == channelId]['Handle'].iloc[0]
+        if channelId in fm.YT_content_creators['channelId'].values:
+            handle = fm.YT_content_creators[fm.YT_content_creators['channelId'] == channelId]['Handle'].iloc[0]
             handle_path = content_creator_folder / f'{handle}.txt'
-            files_manager.add_element_to_file(handle_path, video_id, sort_list = False, print_statement = True)
+            fm.add_element_to_file(handle_path, video_id, sort_list = False, print_statement = True)
             manually_added[handle].append(response)
             saved_quota += 49
+
         else:
             not_in_df.append(response)
             
@@ -239,12 +242,12 @@ def main():
         if was_braked:
             break
         handle = row.Handle
-        channelName = row.channelName
+        channelTitle = row.channelTitle
         channelId = row.channelId
         uploads = row.uploads
 
         print(" "*len(message), end='\r')
-        message = f'{row.Index + 1:0{digits}d} / {num_rows}: {channelName}'
+        message = f'{row.Index + 1:0{digits}d} / {num_rows}: {channelTitle}'
         print(message, end='\r')
         iterations = 1
         if handle in more_iterations:
@@ -256,7 +259,7 @@ def main():
         videos_ids = yt.get_all_ids_playlist(uploads, iterations)
         videos_ids.reverse()
         file_path = content_creator_folder / f'{handle}.txt'
-        handle_ids = files_manager.get_elements_from_file(file_path, create_file = True)
+        handle_ids = fm.get_elements_from_file(file_path, create_file = True)
         playlist_key = next((key for key, handles in youtube_playlists.items() if handle in handles.get('Handles',[])), None)
 
         for index, video_id in enumerate(videos_ids,):
@@ -265,7 +268,7 @@ def main():
                 response = yt.get_response_video_id(video_id)
                 video_id_info = response_mnr.get_video_info(response)
                 if not video_id_info:
-                    files_manager.add_element_to_file(file_path, video_id, False)
+                    fm.add_element_to_file(file_path, video_id, False)
                     continue    
                 video_id_info['file_path'] = file_path
                 video_id_info['response'] = response
@@ -273,20 +276,20 @@ def main():
                 if video_id_info['liveBroadcastContent'] == 'upcoming' or  video_id_info['duration'] == 0:
                     continue
                 elif response_mnr.is_restricted(response):
-                    files_manager.add_element_to_file(file_path, video_id, False)
+                    fm.add_element_to_file(file_path, video_id, False)
                     response_mnr.add_response_df(restriction_folder / f'{handle}.csv', response)
                     
                 elif video_id_info['liveStreamingDetails'] and handle in skip_liveStreamingDetails_handle:
-                    files_manager.add_element_to_file(file_path,video_id, False)
+                    fm.add_element_to_file(file_path,video_id, False)
                     liveStream.append(video_id)  
                 
                 elif (handle in only_long_videos and video_id_info['duration'] < 35*60) or \
                 any(remove_accents(t.lower()) in remove_accents(video_id_info["title"].lower()) for t in titles_list) or \
                 (handle in skip_long_videos and video_id_info['duration'] >= 60*60) or video_id_info['duration'] >= 60*60*3:
-                    files_manager.add_element_to_file(file_path,video_id, False)
+                    fm.add_element_to_file(file_path,video_id, False)
                 else:
                     short = is_short(video_id)
-                    time.sleep(random.uniform(0.5, 1.5))
+                    time.sleep(random.uniform(0.5, 1))
                     if short is None:
                         was_braked = True
                         break
@@ -294,7 +297,7 @@ def main():
                         if handle not in skip_shorts_handle:
                             youtube_playlists[shorts_playlist_name]['new_video_ids'].append(video_id_info)
                         else:
-                            files_manager.add_element_to_file(file_path,video_id, False)
+                            fm.add_element_to_file(file_path,video_id, False)
                     elif playlist_key:
                         youtube_playlists[playlist_key]['new_video_ids'].append(video_id_info)
                     else:
@@ -321,18 +324,19 @@ def main():
     message = ''
     added_videos = defaultdict(list)
     not_added_videos = defaultdict(list)
-    quota_i = files_manager.get_today_quota(False)
+    quota_i = fm.get_today_quota(False)
     for playlist in youtube_playlists:
         new_video_ids = youtube_playlists[playlist]['new_video_ids']
         playlist_id = youtube_playlists[playlist]["Playlist_ID"]
         new_video_ids.sort(key= lambda x: x['publishedAt'])
-        if files_manager.get_today_quota() > quota_limit:
+        if fm.get_today_quota() > quota_limit:
             add_video_to_playlist = False
             was_braked = True
             # break
         if new_video_ids:
             if not playlist_id and not was_braked and add_video_to_playlist:
                 response_playlist = yt.create_private_playlist(playlist, playlist)
+                time.sleep(1)
                 playlist_id = response_playlist.get('id', "")
                 youtube_playlists[playlist]["Playlist_ID"] = playlist_id
 
@@ -352,14 +356,14 @@ def main():
                     not_added_videos[playlist].append(video_info)
                     
 
-                elif files_manager.get_today_quota() > quota_limit:
+                elif fm.get_today_quota() > quota_limit:
                     add_video_to_playlist = False
                     was_braked = True
                     # break
 
                 elif add_video_to_playlist and video_id not in youtube_playlists[playlist]['video_ids']:# and 
                     if yt.add_video_to_playlist(playlist_id, video_id):
-                        files_manager.add_element_to_file(file_path, video_id, False, False)
+                        fm.add_element_to_file(file_path, video_id, False, False)
                         youtube_playlists[playlist]['video_ids'].append(video_id)
                         added_videos[playlist].append(video_info)
                 else:
@@ -368,8 +372,8 @@ def main():
     if was_braked:
         print(f'The process was interrupted. The last video is {video_id} from {file_path.name}')
 
-    consumed_quota = files_manager.get_today_quota(False) - quota_i
-    print(f'It was consumed {consumed_quota:,} quotas in the adding process and the final quota is {files_manager.get_today_quota(False):,}')
+    consumed_quota = fm.get_today_quota(False) - quota_i
+    print(f'It was consumed {consumed_quota:,} quotas in the adding process and the final quota is {fm.get_today_quota(False):,}')
     if added_videos:
         alignment = max(len(playlist) for playlist in added_videos)
         sorted_keys = sorted(added_videos, key=lambda x:sum(video['duration'] for video in added_videos[x]), reverse=True)

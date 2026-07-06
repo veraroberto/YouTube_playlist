@@ -9,7 +9,7 @@ from paths import (content_creator_folder,
 
 
 def get_video_id(url: str) -> str:
-    url = url.strip().replace('https://www.youtube.com/shorts/', 'https://www.youtube.com/watch?v=')
+    url = url.strip().replace('shorts/', 'watch?v=')
     if 'https://www.youtube.com/watch?v=' not in url:
         return url
     parsed = urlparse(url)
@@ -17,13 +17,10 @@ def get_video_id(url: str) -> str:
     return query.get("v", [0])[0]  # default to 0 if missing
 
 def get_playlist_id(url: str) -> str:
-    #https://www.youtube.com/playlist?list=PLiNo79GXtxAs0UUxvNczk6lB9IoBsjgYO
-    if 'https://www.youtube.com/playlist?list' not in url:
-        return url
 
     parsed = urlparse(url)
     query = parse_qs(parsed.query)
-    return query.get("list", [0])[0]  # default to 0 if missing
+    return query.get("list", [url])[0]  # default to 0 if missing
 
 def add_video_manually(YouTubeManager: classmethod, response_manager: classmethod, filesManager: classmethod, url: str) -> None:
     if url is None:
@@ -37,7 +34,7 @@ def add_video_manually(YouTubeManager: classmethod, response_manager: classmetho
         return
     response = YouTubeManager.get_response_video_id(video_id)
     
-    video_info = response_manager.get_video_info(response)
+    video_info = response_manager.get_video_info(response, False, True)
     if not video_info:
         print(f'Video ID {video_id} does not have any information')
         return
@@ -49,17 +46,13 @@ def add_video_manually(YouTubeManager: classmethod, response_manager: classmetho
     handle = channel_info['customUrl']
     
     handle_file_path = content_creator_folder / f'{handle}.txt'
+
+    for k in list(video_info.keys()):
+        if not video_info[k] or video_info[k] == 'none':
+            del video_info[k]
+
     if handle_file_path.exists():
-        align = max(len(key) for key in video_info)
-        for key in video_info:
-            k = f'{key}:'
-            if not video_info[key] or video_info[key] == 'none':
-                continue
-            elif key == 'duration':
-                duration = duration_string(video_info[key])
-                print(f'{k:<{align}} {duration}')
-            else:
-                print(f'{k:<{align}} {video_info[key]}')
+        response_manager.get_video_info(response, True, True)
         print('*'*75)
         filesManager.add_element_to_file(handle_file_path, video_id, True, True)
     else:

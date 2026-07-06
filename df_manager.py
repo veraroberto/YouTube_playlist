@@ -5,7 +5,9 @@ from response import response_manager
 
 from app_functions import choose_option, remove_accents
 from manage_video_ids import get_video_id, get_playlist_id
-from paths import playlist_folder, exception_folder, content_creator_folder
+from paths import (playlist_folder,
+                   exception_folder,
+                   content_creator_folder)
 # from manage_video_ids import manage_exceptions
 
 from pathlib import Path
@@ -74,7 +76,7 @@ class df_manager:
                 return
             else:
                 playlist_response = self.yt.get_response_from_playlist_id(playlist_id)
-                info_df = self.response_mgr.get_playlist_info(playlist_response)
+                info_df = self.response_mgr.get_playlist_info(playlist_response, True)
 
         # info_df
         handle = info_df['customUrl']
@@ -234,6 +236,6 @@ class df_manager:
             return None
         
         return YT_content_creators_iter
-
+    
 if __name__ == "__main__":
     pass

@@ -9,4 +9,8 @@ stats_folder = Path('Stats')
 tokens_folder = Path("Tokens")
 html_folder = Path('HTML')
 
-columns_df = ['Handle', 'channelName', 'channelId', 'uploads']
+columns_df = ['Handle', 'channelTitle', 'channelId', 'uploads']
+
+yt_url = 'https://www.youtube.com/watch?v='
+yt_playlist = 'https://www.youtube.com/playlist?list='
+yt_channel = 'https://www.youtube.com/channel/'

@@ -10,12 +10,15 @@ Playlists/
 Restrictions/
 Stats/
 Tokens/
+Special/
 HTML/
 API_KEY.py
-*ipynb
+*.ipynb
 .ipynb_checkpoints/
 *.ipynb_checkpoints
 *test*
+*special*
 *.html
 *.json
+*.txt
 environment.local.yml

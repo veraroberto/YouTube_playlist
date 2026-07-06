@@ -2,6 +2,12 @@ import isodate
 import pandas as pd
 from filesManager import filesManager
 from pathlib import Path
+from app_functions import (duration_string,
+                           print_dictionary)
+
+import json
+import re
+from paths import (yt_playlist)
 # from urllib.request import urlopen
 
 default_date = "2005-04-24T03:31:52Z" #Timestamp of the first YouTube video ever published 
@@ -13,7 +19,7 @@ class response_manager():
         # self.current_country = self.data.get('country')
         self.current_country = "MX"
         
-    def get_video_info(self, response:  dict) -> dict:
+    def get_video_info(self, response:  dict, print_info: bool = False, del_extra_keys: bool = False) -> dict:
         items = response.get('items', [])
         if not items:
             return {}
@@ -26,8 +32,7 @@ class response_manager():
         channelId = snippet.get('channelId', "")
         contentDetails = items[0].get('contentDetails', {})
         regionRestriction = contentDetails.get('regionRestriction',{})
-        restriction = regionRestriction.get('blocked', [])
-        restriction.extend(regionRestriction.get('allowed', []))
+
         duration_iso = contentDetails.get('duration', 'PT0S')
         duration = isodate.parse_duration(duration_iso).total_seconds()
         liveBroadcastContent = snippet.get('liveBroadcastContent', None)
@@ -40,14 +45,38 @@ class response_manager():
                          'duration' : duration,
                          'liveBroadcastContent': liveBroadcastContent,
                          'liveStreamingDetails': liveStreamingDetails,
-                         'regionRestriction':restriction
+                         'regionRestriction':regionRestriction
                         }
+        if del_extra_keys:
+            if not regionRestriction:
+                del video_id_info['regionRestriction']
+            if video_id_info['liveBroadcastContent'] == "none":
+                del video_id_info['liveBroadcastContent']
+            if video_id_info['liveStreamingDetails'] is None:
+                del video_id_info['liveStreamingDetails']
+        if print_info:
+            align = max(len(k) for k in video_id_info)
+            for k in video_id_info:
+
+                if k == 'duration':
+                    print(f"{k+": ":<{align + 2}} {duration_string(video_id_info[k])}")
+                elif isinstance(video_id_info[k], dict) and video_id_info[k]:
+                    print(k+": ")
+                    align_2 = max(len(k_2) for k_2 in video_id_info[k])
+                    for key, val in video_id_info[k].items():
+                        if isinstance(val, list):
+                            print(f'{" " *(align + 3)}{key+": ":<{align_2 + 2}} {", ".join(val)}')
+                        else:
+                            print(f'{" " *(align + 3)}{key+": ":<{align_2 + 2}} {val}')
+                else:
+                    print(f"{k+": ":<{align + 2}} {video_id_info[k]}")
         return video_id_info
 
     def get_channel_info(self, channel_response: dict) -> dict:
         items = channel_response.get('items', {})
         if not items:
             print("The Channel Doesn't have information ")
+            print(channel_response)
             return
         channelId = items[0].get('id', "")
         snippet = items[0].get('snippet', {})
@@ -77,7 +106,7 @@ class response_manager():
         }
         return channel_info
 
-    def get_playlist_info(self, playlist_response: dict) -> dict:
+    def get_playlist_info(self, playlist_response: dict, print_info: bool = False) -> dict:
         items = playlist_response.get('items',{})
         playlist_id = items[0].get('id','')
         if not items:
@@ -90,21 +119,56 @@ class response_manager():
         channelId = snippet.get('channelId',"")
         title = snippet.get('title')
         customUrl = title.lower().replace(' ', '_')
+        customUrl = re.sub(r'[<>:"/\\|?*]', "", customUrl)
         contentDetails = items[0].get('contentDetails',{})
         if not contentDetails:
             print('There is not contentDetails in the Playlist')
             return
+        
         playlist_info = {
             'title': title,
             'customUrl': customUrl,
             'channelId': channelId,
             'channelTitle': title,
             'uploads': playlist_id,
-            
-
         }
+        if print_info:
+            align = max(len(k) for k in playlist_info)
+            for k, v in playlist_info.items():
+                if k == 'uploads':
+                    print(f'{k+": ":<{align + 2 }}{yt_playlist}{v}')
+                else:
+                    print(f'{k+": ":<{align + 2 }}{v}')
+                    
+                    
         return playlist_info
 
+    def get_added_video_response_info(self, added_response: dict, print_info: bool = False) -> dict | None:
+        id_response = added_response.get('id')
+        # print(id_response)
+        snippet = added_response.get('snippet', {})
+        if not snippet:
+            print(f'The video ID {id_response} does not have a snippet in the Added response')
+            return
+        resourceId = snippet.get('resourceId')
+        videoId = resourceId.get('videoId')
+        title = snippet.get('title')
+        videoOwnerChannelTitle = snippet.get('videoOwnerChannelTitle')
+        
+        contentDetails = added_response.get('contentDetails', {})
+        videoPublishedAt = contentDetails.get('videoPublishedAt')      
+        response_info = {
+            'id_response': id_response,
+            'videoPublishedAt': videoPublishedAt,
+            'title': title,
+            'videoOwnerChannelTitle': videoOwnerChannelTitle,
+            'videoId': videoId
+        }
+        if print_info:
+            print_dictionary(response_info)
+
+        return response_info
+    
     def is_restricted(self, response: dict) -> None | dict:
         items = response.get('items', [])
         if not items:
@@ -150,5 +214,13 @@ class response_manager():
         self.files_manager.write_csv_safely(df, file_path)
 
 if __name__ == '__main__':
-    pass
+    from YouTube import YouTubeManager
+    rsp_mng = response_manager()
+
+    # yt = YouTubeManager()
+    # playlist_id = 'PLCFlKAAOW47g'
+    # playlist_response = yt.get_response_from_playlist_id(playlist_id)
+    # rsp_mng.get_playlist_info(playlist_response, True)
+  
+
     

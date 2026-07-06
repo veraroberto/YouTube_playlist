@@ -2,6 +2,7 @@ import pandas as pd
 from datetime import datetime, timedelta
 from zoneinfo import ZoneInfo 
 from pathlib import Path
+import pandas as pd
 
 from paths import (content_creator_folder,
                    content_creator_folder_response,
@@ -136,13 +137,15 @@ class filesManager:
             else:
                 return file_path.read_text(encoding="utf-8").splitlines()
  
-    def add_list_to_file(self, file_path: Path, list_elements: list,
-                         sort_list: bool =True, create_file=False) -> None:
+    def add_list_to_file(self, file_path: Path, 
+                         list_elements: list,
+                         sort_list: bool =True, 
+                         create_file=False) -> None:
         file_path = Path(file_path).with_suffix('.txt')
         if not file_path.exists() and not create_file:
             print('File does not exists')
             return
-        elements_file = self.get_elements_from_file(file_path)
+        elements_file = self.get_elements_from_file(file_path, create_file)
         
         # Track if we actually added anything to avoid unnecessary disk writes
         has_changes = False
@@ -207,10 +210,19 @@ class filesManager:
 
 
 if __name__ == "__main__":
-    pass
-
-
-
-  
-
+    from YouTube import YouTubeManager
+    from collections import Counter
+    yt = YouTubeManager()
+    fm = filesManager()
+    df = fm.YT_content_creators
+    files = [f for f in restriction_folder.iterdir() if f.suffix == '.csv']
+    align = max(len(f.stem) for f in files)
+    total = 0
+    for file in files:
+        if file.stem in ['friends', 'bigbangtheory']:
+            continue
+        df = pd.read_csv(file)
+        total += len(df)
+        print(f'{file.stem + ": ":<{align + 2}} {len(df):>5,}')
+    print(f'The total videos are {total:,}')
 
