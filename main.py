@@ -36,10 +36,7 @@ from df_manager import df_manager
 def main():
 
     add_video_to_playlist = True
-    parser = argparse.ArgumentParser(
-        description="YouTube Playlist Organizer"
-    )
-
+    parser = argparse.ArgumentParser(description="YouTube Playlist Organizer")
  
     subparsers = parser.add_subparsers(dest="command")
     subparsers.add_parser("quota", aliases=['q'], help="Show today's consumed YouTube API quota")
@@ -60,7 +57,6 @@ def main():
 
     fm = filesManager()
     yt = YouTubeManager()
-    # functions = app()
     response_mnr = response_manager()
     df_mnr = df_manager()
 
@@ -156,6 +152,9 @@ def main():
     skip_handle_shorts_path = exception_folder / 'skip_shorts_handle.txt'
     skip_shorts_handle = fm.get_elements_from_file(skip_handle_shorts_path)
 
+    short_in_playlist_path = exception_folder / "short_in_playlist.txt"
+    short_in_playlist = fm.get_elements_from_file(short_in_playlist_path, create_file=True)
+
     skip_long_videos_60m_path = exception_folder / 'skip_long_videos_60m.txt'
     skip_long_videos = fm.get_elements_from_file(skip_long_videos_60m_path, create_file = True)
 
@@ -171,8 +170,12 @@ def main():
     more_iterations_path = exception_folder / "more_iterations.txt"
     more_iterations = fm.get_elements_from_file(more_iterations_path, create_file=True)    
 
+
+
     missing_video_ids = fm.find_missing_elements(all_ids_from_playlist)
     missing_video_ids = [x for x in missing_video_ids if x not in vertical_video_id]
+
+    
     
     if missing_video_ids:
         print(f'There are {len(missing_video_ids)} videos not in the files')
@@ -246,9 +249,9 @@ def main():
         channelId = row.channelId
         uploads = row.uploads
 
-        print(" "*len(message), end='\r')
+        # print(" "*len(message), end='\r')
         message = f'{row.Index + 1:0{digits}d} / {num_rows}: {channelTitle}'
-        print(message, end='\r')
+        print(message + '\033[K', end='\r')
         iterations = 1
         if handle in more_iterations:
             """
@@ -285,7 +288,7 @@ def main():
                 
                 elif (handle in only_long_videos and video_id_info['duration'] < 35*60) or \
                 any(remove_accents(t.lower()) in remove_accents(video_id_info["title"].lower()) for t in titles_list) or \
-                (handle in skip_long_videos and video_id_info['duration'] >= 60*60) or video_id_info['duration'] >= 60*60*3:
+                (handle in skip_long_videos and video_id_info['duration'] >= 60*60) or (video_id_info['duration'] >= 60*60*3):
                     fm.add_element_to_file(file_path,video_id, False)
                 else:
                     short = is_short(video_id)
@@ -293,7 +296,7 @@ def main():
                     if short is None:
                         was_braked = True
                         break
-                    elif short is True:
+                    elif short is True and handle not in short_in_playlist:
                         if handle not in skip_shorts_handle:
                             youtube_playlists[shorts_playlist_name]['new_video_ids'].append(video_id_info)
                         else:
@@ -307,8 +310,8 @@ def main():
             break
 
 
-    print(" "*len(message), end='\r')
-    print(f'Duration to getting the new IDs => {duration_string(time.time() - start)}')
+    # print(" "*len(message), end='\r')
+    print(f'Duration to getting the new IDs => {duration_string(time.time() - start)}' + '\033[K')
     if not was_braked:
         total_duration = sum(video_id['duration'] for playlist in youtube_playlists for video_id in youtube_playlists[playlist]['new_video_ids'])
         print(f"Duration of all the new Video IDs => {duration_string(total_duration)}")
@@ -349,9 +352,9 @@ def main():
             for video_info in new_video_ids:
                 file_path = video_info['file_path']
                 video_id = video_info['video_id']
-                print(' '*len(message), end='\r')
-                message = f'Adding {video_id} from {file_path.stem} to the playlist {playlist}'
-                print(message, end='\r')
+                # print(' '*len(message), end='\r')
+                message = f'Adding {video_id} from {file_path.stem} to the playlist {playlist}' + '\033[K'
+                print(message + '\033[K', end='\r')
                 if not add_video_to_playlist:
                     not_added_videos[playlist].append(video_info)
                     
@@ -368,9 +371,9 @@ def main():
                         added_videos[playlist].append(video_info)
                 else:
                     pass
-    print(' '*len(message), end='\r')         
+    # print(' '*len(message), end='\r')         
     if was_braked:
-        print(f'The process was interrupted. The last video is {video_id} from {file_path.name}')
+        print(f'The process was interrupted. The last video is {video_id} from {file_path.name}' + '\033[K')
 
     consumed_quota = fm.get_today_quota(False) - quota_i
     print(f'It was consumed {consumed_quota:,} quotas in the adding process and the final quota is {fm.get_today_quota(False):,}')

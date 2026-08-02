@@ -91,11 +91,15 @@ class df_manager:
             print(f'{chosen} is not going to be added to any particular playlist')
         elif handle_playlist == self.playlist_names[-1]:
             new_playlist_name = input('Name of the New Playlist: ').strip()
-            playlist_file_path = playlist_folder / f'{handle_playlist}.txt'
+            playlist_file_path = playlist_folder / f'{new_playlist_name.replace(" ", "_")}.txt'
             if playlist_file_path.exists():
                 print(f'The new Playlist: {new_playlist_name} is already in the files.')
             else:
-                  self.files_manager.add_element_to_file(playlist_file_path, handle, sort_list=True, print_statement=False)
+                  self.files_manager.add_element_to_file(playlist_file_path,
+                                                         handle, 
+                                                         sort_list=True,
+                                                         print_statement=False,
+                                                         create_file=True)
         else:
             playlist_file_path = playlist_folder / f'{handle_playlist.replace(" ","_")}.txt'
             self.files_manager.add_element_to_file(playlist_file_path, handle, sort_list=True)
@@ -198,6 +202,7 @@ class df_manager:
                 message_2 = 'Playlist that would not be in the Data Frame'
             playlist_chosen = []
             youtube_names_iter = [file.stem.replace("_", " ").strip() for file in playlist_folder.iterdir() if file.suffix == '.txt']
+            youtube_names_iter.sort()
             playlist_to_search = choose_option(youtube_names_iter, message)
             playlist_chosen.append(playlist_to_search)
             file_path = playlist_folder / f'{playlist_to_search.replace(" ", "_")}.txt'
@@ -206,7 +211,7 @@ class df_manager:
             while True:
                 continue_adding = choose_option([True, False], "Add more Playlist into the filter:")
                 if continue_adding:
-                    playlist_to_search = choose_option(youtube_names_iter, 'Paylist to search new Handles')
+                    playlist_to_search = choose_option(youtube_names_iter, 'Playlist to search new Handles')
                     youtube_names_iter.pop(youtube_names_iter.index(playlist_to_search))
                     file_path = playlist_folder / f'{playlist_to_search.replace(" ", "_")}.txt'
                     handles_filter.extend(self.files_manager.get_elements_from_file(file_path, False))
@@ -238,4 +243,5 @@ class df_manager:
         return YT_content_creators_iter
     
 if __name__ == "__main__":
-    pass
+    print('string 1234', end='\r')
+    print('s' + '\033[K')

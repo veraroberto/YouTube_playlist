@@ -111,6 +111,7 @@ class response_manager():
         playlist_id = items[0].get('id','')
         if not items:
             print(f'There no items in the playlist')
+            print(playlist_response)
             return
         snippet = items[0].get('snippet', {})
         if not snippet:
@@ -173,6 +174,7 @@ class response_manager():
         items = response.get('items', [])
         if not items:
             print('There is no items response')
+            print(response)
             return
         else: 
             contentDetails = items[0].get('contentDetails', {})

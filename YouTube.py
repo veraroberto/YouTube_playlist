@@ -20,7 +20,7 @@ from manage_video_ids import (get_playlist_id)
 from filesManager import filesManager
 from collections import defaultdict
 from paths import (tokens_folder,
-                   playlist_folder)
+                   exception_folder)
 
 from urllib.parse import (urlparse,
                           parse_qs)
@@ -105,11 +105,13 @@ class YouTubeManager:
             while request:
                 response = request.execute()
                 self.files_manager.add_to_today_quota(1)
-                # Collect playlist names and IDs
+  
                 for item in response.get("items", []):
                     playlists.append({
                         "id": item["id"],
-                        "name": item["snippet"]["title"]
+                        'publishedAt': item["snippet"]['publishedAt'],
+                        "name": item["snippet"]["title"],
+                        'itemCount':item['contentDetails']['itemCount']                     
                     })
                 # Get the next page of results if available
                 request = self.youtube.playlists().list_next(request, response)
@@ -190,7 +192,7 @@ class YouTubeManager:
             )
             response = request.execute()
             self.files_manager.add_to_today_quota(50)
-            print(f'Playlist "{title}" was created successfully!')
+            print(f'Playlist "{title}" was created successfully!\033[K')
             print(f"Playlist ID: {response['id']}")
             print('--'*40)
             return response
@@ -223,7 +225,7 @@ class YouTubeManager:
         
     def delete_video_id_from_playlist(self, playlist_id: str,
                                        video_id_to_delete: str,
-                                       print_message: bool = True) -> None:
+                                       print_message: bool = True) -> dict | None:
         # --- Step 1: Find the playlistItemId that matches the videoId ---
         page_token = None
         playlist_item_id = None
@@ -294,6 +296,7 @@ class YouTubeManager:
             response = self.get_response_video_id(video_id)
             restriction = self.response_mng.is_restricted(response)
             video_info = self.response_mng.get_video_info(response)
+
             if restriction:
                 print(f'The video ID: {video_id} is restricted. Index: {index}')
                 self.response_mng.get_video_info(response, True)
@@ -363,23 +366,26 @@ if __name__ =='__main__':
     yt = YouTubeManager()
     resp_mng = response_manager()
     fm = filesManager()
-    # playlists = yt.get_all_playlists()
-    # playlist_names = [pl.get('name') for pl in playlists]
-    # choosen_playlist = choose_option(playlist_names, "Choose a Playlist")
-    # playlist_id = next((d["id"] for d in playlists if choosen_playlist in d.values()), None)
-    playlist_id = "LL"
+    import pandas as pd
+    playlists = yt.get_all_playlists()
+    align = max(len(k['name']) for k in playlists)
+    sroted_p = sorted(playlists, key = lambda x: x['itemCount'], reverse=True)
+    for i, p in enumerate(sroted_p, 1):
+        print(f'{i:02d} {p["name"]:<{align}} {p['itemCount']:>3}')
+
+
+    playlist_names = [pl.get('name') for pl in playlists]
+    chosen_playlist = choose_option(playlist_names, "Choose a Playlist")
+    playlist_id = next((d["id"] for d in playlists if chosen_playlist in d.values()), None)
+
     print(f'{yt_playlist}{playlist_id}')
-   
     handles = yt.get_all_handles_from_playlist(playlist_id,
-                                               delete_video=True,
-                                               print_handles=True, 
-                                               sort_by_duration=False, 
-                                               create_restricted_html=True)
-    align = max(len(h) for h in handles)
-
-   
-
-
+                                               delete_video = True,
+                                               print_handles = True, 
+                                               sort_by_duration = False, 
+                                               create_restricted_html = True,
+                                               iterations=10)   
 
     
+
     

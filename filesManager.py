@@ -143,7 +143,7 @@ class filesManager:
                          create_file=False) -> None:
         file_path = Path(file_path).with_suffix('.txt')
         if not file_path.exists() and not create_file:
-            print('File does not exists')
+            print(f'File does not exists {file_path} the list was not added')
             return
         elements_file = self.get_elements_from_file(file_path, create_file)
         
@@ -170,9 +170,10 @@ class filesManager:
     def add_element_to_file(self, file_path: Path, 
                             element: str,
                             sort_list: bool = True,
-                            print_statement: bool = False) -> None:
+                            print_statement: bool = False,
+                            create_file: bool = False) -> None:
         file_path = Path(file_path).with_suffix('.txt')
-        elements = self.get_elements_from_file(file_path)
+        elements = self.get_elements_from_file(file_path, create_file)
         
         # Handle the print statement logic here
         if str(element) in elements:
