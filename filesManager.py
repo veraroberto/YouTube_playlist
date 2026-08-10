@@ -3,6 +3,7 @@ from datetime import datetime, timedelta
 from zoneinfo import ZoneInfo 
 from pathlib import Path
 import pandas as pd
+import json
 
 from paths import (content_creator_folder,
                    content_creator_folder_response,
@@ -59,6 +60,21 @@ class filesManager:
     def write_csv_safely(self, df: pd.DataFrame, filename: Path) -> None:
         with open(filename, 'w', newline='', encoding='utf-8-sig') as f:
             df.to_csv(f, index=False, date_format="%Y-%b-%d")
+
+    def read_json(self, filename: Path, create_file: bool = False) -> dict:
+        filename = Path(filename).with_suffix('.json')
+        if not filename.exists():
+            dictionary = {}
+            if create_file:
+                self.write_json(dictionary, filename)
+        else:
+            dictionary = json.loads(filename.read_text(encoding='utf-8'))
+        return dictionary
+    
+    def write_json(self, dictionary: dict, filename: Path) -> None:
+        filename = Path(filename).with_suffix('.json')
+        formatted_json = json.dumps(dictionary, sort_keys=True, indent=4)
+        filename.write_text(formatted_json, encoding='utf-8')
 
     def add_to_today_quota(self, new_quota: int) -> None:
         pst_time = datetime.now(ZoneInfo("America/Los_Angeles")) #The quoatas counter is restarted every day a midnight in this time zone
@@ -212,18 +228,10 @@ class filesManager:
 
 if __name__ == "__main__":
     from YouTube import YouTubeManager
-    from collections import Counter
+    # from collections import Counter
     yt = YouTubeManager()
     fm = filesManager()
-    df = fm.YT_content_creators
-    files = [f for f in restriction_folder.iterdir() if f.suffix == '.csv']
-    align = max(len(f.stem) for f in files)
-    total = 0
-    for file in files:
-        if file.stem in ['friends', 'bigbangtheory']:
-            continue
-        df = pd.read_csv(file)
-        total += len(df)
-        print(f'{file.stem + ": ":<{align + 2}} {len(df):>5,}')
-    print(f'The total videos are {total:,}')
 
+    video_id = 'yx44bm0BEPg'
+    filename = Path("Dict_list")
+    

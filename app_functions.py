@@ -105,7 +105,7 @@ def is_short(video_id: str) -> bool | None:
 
     return None
 
-def create_bookmarks(urls: dict, file_path: str = "bookmarks.html", partial_url: str = "",b_title = "Bookmarks"):
+def create_bookmarks(urls: dict, file_path: Path = Path("bookmarks.html"), partial_url: str = "",b_title = "Bookmarks"):
     #Dictionary: key = partial_url, value = 
     file_path_obj = Path(file_path)
     
@@ -152,7 +152,7 @@ def create_bookmarks(urls: dict, file_path: str = "bookmarks.html", partial_url:
 
     print(f"🔥 Total {len(sorted_items)} bookmarks sorted and saved to: {file_path}")
 
-def search_string_folder(folder_path: Path, search_string: str) -> bool:
+def search_string_folder(folder_path: Path, search_string: str) -> bool | None:
     folder_path = Path(folder_path)
     for file in folder_path.rglob('*.txt'):
         try:

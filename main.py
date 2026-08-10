@@ -170,7 +170,8 @@ def main():
     more_iterations_path = exception_folder / "more_iterations.txt"
     more_iterations = fm.get_elements_from_file(more_iterations_path, create_file=True)    
 
-
+    handle_dict_name_excepts_path = exception_folder / "handle_dict_name_excepts.json"
+    handle_dict_name_excepts = fm.read_json(handle_dict_name_excepts_path, True)
 
     missing_video_ids = fm.find_missing_elements(all_ids_from_playlist)
     missing_video_ids = [x for x in missing_video_ids if x not in vertical_video_id]
@@ -285,9 +286,14 @@ def main():
                 elif video_id_info['liveStreamingDetails'] and handle in skip_liveStreamingDetails_handle:
                     fm.add_element_to_file(file_path,video_id, False)
                     liveStream.append(video_id)  
+                elif handle in handle_dict_name_excepts and \
+                    any(remove_accents(t.lower()) in remove_accents(video_id_info["title"].lower()) for t in handle_dict_name_excepts[handle]): 
+                    print(f"Skiping the Video for the exception word in the title from {handle}")
+                    response_mnr.get_video_info(response, True, True)
+                    fm.add_element_to_file(file_path,video_id, False)
+                    print('*'*100)
                 
                 elif (handle in only_long_videos and video_id_info['duration'] < 35*60) or \
-                any(remove_accents(t.lower()) in remove_accents(video_id_info["title"].lower()) for t in titles_list) or \
                 (handle in skip_long_videos and video_id_info['duration'] >= 60*60) or (video_id_info['duration'] >= 60*60*3):
                     fm.add_element_to_file(file_path,video_id, False)
                 else:
@@ -415,7 +421,7 @@ if __name__ == "__main__":
     if not_added_videos:
         today = date.today()
         formatted_date = today.strftime("%Y-%m-%d")
-        print('The follwoing playlist html files were created:')
+        print('The following playlist html files were created:')
         for pl_index, playlist in enumerate(not_added_videos, 1):
             print(f'{pl_index:02d} {playlist}')
             urls_dict = {}

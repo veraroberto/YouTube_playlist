@@ -6,7 +6,9 @@ from app_functions import (choose_option,
 from paths import (content_creator_folder,
                    exception_folder)
 
+from filesManager import filesManager
 
+fm = filesManager()
 
 def get_video_id(url: str) -> str:
     url = url.strip().replace('shorts/', 'watch?v=')
@@ -60,14 +62,26 @@ def add_video_manually(YouTubeManager: classmethod, response_manager: classmetho
         print(f'The file handle {handle_file_path.stem} does not exists')
 
 def manage_exceptions(filesManager: classmethod) -> None:
-    options = [file for file in exception_folder.iterdir() if file.suffix == '.txt']
+    options = [file for file in exception_folder.iterdir() if file.suffix == '.txt' or file.suffix == '.json']
     options.append('New Exception File')
     exception_file = choose_option(options, message="Choose the Exception to add: ")
     if exception_file == options[-1]:
         new_file_name = input('New file:').strip()
         exception_file = exception_folder / new_file_name
         exception_element = input(f'Video ID of a Vertical Video ID: ')
-        
+
+    elif exception_file.suffix == '.json':
+        dictionary = fm.read_json(exception_file)
+        handle = input("Handle: ").strip().lower()
+        key = input(f"Word in title from the handle: {handle}: ").strip().lower()
+        if handle in dictionary and key not in dictionary[handle]:
+            print('The Handle Exists')
+            dictionary[handle].append(key)
+        else:
+            dictionary[handle] = [key]
+        fm.write_json(dictionary, exception_file)
+        return 
+    
     else:
         exception_element = input(f'Handle or Title to Add in {exception_file.stem}: ').lower()
     filesManager.add_element_to_file(exception_file, exception_element, sort_list=True, print_statement=True)
