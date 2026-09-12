@@ -3,13 +3,17 @@ from YouTube import YouTubeManager
 from response import response_manager
 
 
-from app_functions import choose_option, remove_accents
-from manage_video_ids import get_video_id, get_playlist_id
+from app_functions import (choose_option,
+                           remove_accents,
+                           get_video_id,
+                           get_playlist_id)
+
 from paths import (playlist_folder,
                    exception_folder,
-                   content_creator_folder)
+                   content_creator_folder,
+                   yt_url)
 # from manage_video_ids import manage_exceptions
-
+from typing import cast
 from pathlib import Path
 import pandas as pd
 
@@ -27,6 +31,10 @@ class df_manager:
             self.YT_content_creators = pd.read_csv(self.file_path_yt_creators)
         else:
             self.YT_content_creators = pd.DataFrame(columns=columns_df)
+        if 'Handle' in columns_df:
+            self.handles_df = self.YT_content_creators['Handle'].values
+        else:
+            self.handles_df = []
 
         self.playlist_files = [file for file in playlist_folder.iterdir() if file.suffix == '.txt']
         self.playlist_names = [playlist.stem.replace('_', ' ').strip() for playlist in self.playlist_files]
@@ -34,6 +42,36 @@ class df_manager:
         self.yt = YouTubeManager()
         self.response_mgr = response_manager()
 
+    def update_df(self,
+                  df_path: None | Path = None,
+                  new_row: dict | list[dict] | None = None,
+                  columns_df: list = columns_df,
+                  sort_by: str = ""
+                  ) -> None:
+        if new_row is None:
+            print('There is nothing to update')
+            return
+        
+        if df_path is None:
+            df_path = self.file_path_yt_creators
+
+        if not df_path.exists():
+            cols = columns_df if columns_df is not None else columns_df
+            df = pd.DataFrame(columns=cols)
+        else:
+            df = pd.read_csv(df_path)
+
+        if isinstance(new_row, dict):
+            new_row = [new_row]
+
+        if new_row:
+            new_df = pd.DataFrame(new_row)
+            df = pd.concat([df, new_df], ignore_index=True)
+            if sort_by and sort_by in df.columns:
+                df = df.sort_values(by=sort_by)
+            self.files_manager.write_csv_safely(df, df_path)
+        
+        
     def add_row_df(self) -> None:
         options = ['Video ID',
                    'Handle',
@@ -46,9 +84,18 @@ class df_manager:
         elif chosen == options[0]: # Video ID
             video_id = get_video_id(input("Video ID or the URL of the channel: ").strip())
             response = self.yt.get_response_video_id(video_id)
+            if response is None:
+                print(f"There is not response for video ID: {video_id}")
+                return
             video_info = self.response_mgr.get_video_info(response)
+            if video_info is None:
+                print(f'There is no response to the video ID {yt_url}{video_id}')
+                return
             channelId = video_info['channelId']
             channel_response = self.yt.get_channel_response(channelId)
+            if channel_response is None:
+                print("Not adding a new row")
+                return
             info_df = self.response_mgr.get_channel_info(channel_response)                
         elif chosen == options[1]: # Handle
             print('By handles')
@@ -59,7 +106,8 @@ class df_manager:
             else:
                 print(f'{handle} is going to be added to the Data Frame')
                 channel_response = self.yt.get_response_channel_by_handle(handle)
-                
+                if channel_response is None:
+                    return
                 info_df = self.response_mgr.get_channel_info(channel_response)
         elif chosen == options[2]: # Channel ID
             channelId = input('Add a new Row by channelId: ')
@@ -68,6 +116,9 @@ class df_manager:
                 return
             else:
                 channel_response = self.yt.get_channel_response(channelId)
+                if channel_response is None:
+                    print("There is not going to be added a new row")
+                    return
                 info_df = self.response_mgr.get_channel_info(channel_response) 
         elif chosen == options[3]: # Playlist 
             playlist_id =  get_playlist_id(input('Get the new playlist ID: ').strip())
@@ -76,9 +127,15 @@ class df_manager:
                 return
             else:
                 playlist_response = self.yt.get_response_from_playlist_id(playlist_id)
+                if playlist_response is None:
+                    print(f'There is no response for the playlist {playlist_id}')
+                    return
                 info_df = self.response_mgr.get_playlist_info(playlist_response, True)
-
-        # info_df
+        else:
+            return
+        if info_df is None:
+            print(f'There was no info to add to the new row ')
+            return
         handle = info_df['customUrl']
         channelTitle = info_df['channelTitle']
         channelId = info_df['channelId']
@@ -87,6 +144,9 @@ class df_manager:
         #Sort the new row into a Playlist
         self.playlist_names.extend(['Other Videos', "New Playlist"])
         handle_playlist = choose_option(self.playlist_names, f"Add the new {chosen} to the Playlist:")
+        if handle_playlist is None:
+            print('There is not a handle selected')
+            return
         if handle_playlist == self.playlist_names[-2]:
             print(f'{chosen} is not going to be added to any particular playlist')
         elif handle_playlist == self.playlist_names[-1]:
@@ -101,6 +161,7 @@ class df_manager:
                                                          print_statement=False,
                                                          create_file=True)
         else:
+            handle_playlist = cast(str, handle_playlist)
             playlist_file_path = playlist_folder / f'{handle_playlist.replace(" ","_")}.txt'
             self.files_manager.add_element_to_file(playlist_file_path, handle, sort_list=True)
         video_ids_yt = self.yt.get_all_ids_playlist(uploads, 200)
@@ -125,15 +186,18 @@ class df_manager:
             print(exception_files)
             while True:
                 file = choose_option(exception_files, "Choose the to Exception file to add the Handle")
+                if file is None:
+                    print('No file was selected')
+                    return
                 file_path = exception_folder / f'{file}.txt'
                 self.files_manager.add_element_to_file(file_path, handle, sort_list=True, print_statement=False)
                 
                 if not choose_option([True, False], "Continue Adding Exception: "):
                     break
-                exception_files.remove(file)
+                exception_files.remove(cast(str,file))
 
     def delete_information_in_files(self) -> None:
-        handle = remove_accents(input('Select a handle to delete: ').strip().lower())
+        handle = remove_accents(input('Select a handle to delete: ').strip().lower().replace(" ","_"))
         # Folders
         # content_creator_folder = self.files_manager.content_creator_folder
         if handle not in self.YT_content_creators['Handle'].values:
@@ -158,23 +222,12 @@ class df_manager:
         search_folder = [
             playlist_folder,
             exception_folder,
-        ]
-        files = [file  for folder in search_folder for file in folder.iterdir() if file.suffix =='.txt']
+       ]
+        for folder in search_folder:
+            self.files_manager.delete_string_from_txt_files(folder, handle)
+ 
 
-        found_handle = False
-        for file in files:
-            content = file.read_text(encoding="utf-8").splitlines()
-            if handle in content:
-                content.remove(handle)
-                with file.open(mode="w", encoding="utf-8", newline="\n") as f:
-                    f.write('\n'.join(content))
-                print(f'{handle} was removed from {file.stem}')
-                found_handle = True
-
-        if not found_handle:
-            print(f'The handle {handle} was not found inside any file')
-
-    def get_df_to_iterate(self, playlist_folder: Path, YT_content_creators: pd.DataFrame) -> pd.DataFrame:
+    def get_df_to_iterate(self, playlist_folder: Path, YT_content_creators: pd.DataFrame) -> pd.DataFrame | None:
         if not playlist_folder.exists():
             print('There is not a playlist folder')
             return
@@ -186,7 +239,7 @@ class df_manager:
                           'Add to files the videos that were manually added to the Playlists',
                           'Exit Process']
         search_handles = choose_option(search_options, 'Search for a Particular Handles')
-        
+
         if search_handles == search_options[0]:
             YT_content_creators_iter = YT_content_creators
             
@@ -204,14 +257,24 @@ class df_manager:
             youtube_names_iter = [file.stem.replace("_", " ").strip() for file in playlist_folder.iterdir() if file.suffix == '.txt']
             youtube_names_iter.sort()
             playlist_to_search = choose_option(youtube_names_iter, message)
+            if not playlist_to_search or isinstance(playlist_to_search, dict):
+                print("The is no DF to iterate")
+                return
             playlist_chosen.append(playlist_to_search)
             file_path = playlist_folder / f'{playlist_to_search.replace(" ", "_")}.txt'
             handles_filter = self.files_manager.get_elements_from_file(file_path, False)
             youtube_names_iter.pop(youtube_names_iter.index(playlist_to_search))
             while True:
                 continue_adding = choose_option([True, False], "Add more Playlist into the filter:")
+                if continue_adding is None:
+                    print('A problem in the Filter')
+                    return
                 if continue_adding:
                     playlist_to_search = choose_option(youtube_names_iter, 'Playlist to search new Handles')
+                    if playlist_to_search is None:
+                        print('No Playlist')
+                        return
+                    playlist_to_search = cast(str, playlist_to_search)
                     youtube_names_iter.pop(youtube_names_iter.index(playlist_to_search))
                     file_path = playlist_folder / f'{playlist_to_search.replace(" ", "_")}.txt'
                     handles_filter.extend(self.files_manager.get_elements_from_file(file_path, False))
@@ -221,7 +284,7 @@ class df_manager:
             print(f'{message_2}: {", ".join(playlist_chosen)}')
             if search_handles == search_options[2]:
                 YT_content_creators_iter = YT_content_creators[YT_content_creators['Handle'].isin(handles_filter)].reset_index(drop=True)
-            if search_handles == search_options[3]:
+            else:
                 YT_content_creators_iter = YT_content_creators[~YT_content_creators['Handle'].isin(handles_filter)].reset_index(drop=True)                
 
         elif search_handles == search_options[4]:
@@ -236,12 +299,12 @@ class df_manager:
         elif search_handles == search_options[5]: # Retrun an empty DataFrame
             YT_content_creators_iter = YT_content_creators.head(0)
             
-        
-        elif search_handles == search_options[6]:
+        else:
+            print(f'In function. Not maing. Doing nothing')
             return None
         
         return YT_content_creators_iter
     
 if __name__ == "__main__":
-    print('string 1234', end='\r')
-    print('s' + '\033[K')
+    
+    pass

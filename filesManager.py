@@ -17,37 +17,37 @@ from paths import (content_creator_folder,
 
 class filesManager:   
     def __init__(self):
-        if not content_creator_folder.exists():
-            content_creator_folder.mkdir(parents=True, exist_ok=True)
-            print(f'The folder {content_creator_folder.stem} was created')
+        # if not content_creator_folder.exists():
+        #     content_creator_folder.mkdir(parents=True, exist_ok=True)
+        #     print(f'The folder {content_creator_folder.stem} was created')
 
-        if not content_creator_folder_response.exists():
-            content_creator_folder_response.mkdir(parents=True, exist_ok=True)
-            print(f'The folder {content_creator_folder_response.stem} was created')
+        # if not content_creator_folder_response.exists():
+        #     content_creator_folder_response.mkdir(parents=True, exist_ok=True)
+        #     print(f'The folder {content_creator_folder_response.stem} was created')
 
-        if not exception_folder.exists():
-            exception_folder.mkdir(parents=True, exist_ok=True)
-            print(f'The folder {exception_folder.stem} was created')
+        # if not exception_folder.exists():
+        #     exception_folder.mkdir(parents=True, exist_ok=True)
+        #     print(f'The folder {exception_folder.stem} was created')
 
-        if not playlist_folder.exists():
-            playlist_folder.mkdir(parents=True, exist_ok=True)
-            print(f'The folder {playlist_folder.stem} was created')
+        # if not playlist_folder.exists():
+        #     playlist_folder.mkdir(parents=True, exist_ok=True)
+        #     print(f'The folder {playlist_folder.stem} was created')
 
-        if not restriction_folder.exists():
-            restriction_folder.mkdir(parents=True, exist_ok=True)
-            print(f'The folder {restriction_folder.stem} was created')
+        # if not restriction_folder.exists():
+        #     restriction_folder.mkdir(parents=True, exist_ok=True)
+        #     print(f'The folder {restriction_folder.stem} was created')
 
-        if not stats_folder.exists():
-            stats_folder.mkdir(parents=True, exist_ok=True)
-            print(f'The folder {stats_folder.stem} was created')
+        # if not stats_folder.exists():
+        #     stats_folder.mkdir(parents=True, exist_ok=True)
+        #     print(f'The folder {stats_folder.stem} was created')
 
-        if not tokens_folder.exists():
-            tokens_folder.mkdir(parents=True, exist_ok=True)
-            print(f'The folder {tokens_folder.stem} was created')
+        # if not tokens_folder.exists():
+        #     tokens_folder.mkdir(parents=True, exist_ok=True)
+        #     print(f'The folder {tokens_folder.stem} was created')
         
-        if not html_folder.exists():
-            html_folder.mkdir(parents=True, exist_ok=True)
-            print(f'The folder {html_folder.stem} was created')         
+        # if not html_folder.exists():
+        #     html_folder.mkdir(parents=True, exist_ok=True)
+        #     print(f'The folder {html_folder.stem} was created')         
             
         self.quota_filename = stats_folder / 'Quota.csv'
         self.file_path_yt_creators = stats_folder / 'YT_content_creators.csv'
@@ -138,13 +138,13 @@ class filesManager:
         if not quota_row.empty:
             current_quota = quota_row.iloc[0]['Quota']
             if print_statement:
-                print(f'The current quota usage is: {int(current_quota):,}')
+                print(f'The current quota usage is: {int(current_quota):,}\033[K')
             return current_quota
         else:
             print(f'The current quota usage is 0')
             return 0
 
-    def get_elements_from_file(self, file_path: Path, create_file: bool = False):
+    def get_elements_from_file(self, file_path: Path | str, create_file: bool = False):
             file_path = Path(file_path).with_suffix('.txt')
             if not file_path.exists():
                 if create_file:
@@ -181,8 +181,6 @@ class filesManager:
             with file_path.open(mode="w", encoding="utf-8", newline="\n") as f:
                 f.write('\n'.join(elements_file))
             
-        return elements_file
-
     def add_element_to_file(self, file_path: Path, 
                             element: str,
                             sort_list: bool = True,
@@ -195,15 +193,15 @@ class filesManager:
         if str(element) in elements:
             if print_statement:
                 print(f'{element} is already in {file_path.name}')
-            return elements # Exit early since nothing needs to be added
+            return #elements # Exit early since nothing needs to be added
         
         # If it's not in the list, use add_list_to_file to save it
         return self.add_list_to_file(file_path, [element], sort_list)
 
-    def find_missing_elements(self, search_list: list) -> list:
+    def find_missing_elements(self, search_list: list, source_folder: Path = content_creator_folder) -> list:
         # Convert to a set so we can remove items as we find them
         remaining_to_find = set(search_list)       
-        for file_path in content_creator_folder.iterdir():
+        for file_path in source_folder.iterdir():
             if file_path.suffix == '.txt':
                 # If we've already found everything, stop reading files
                 if not remaining_to_find:
@@ -223,6 +221,25 @@ class filesManager:
         # Convert back to list or return as set
         return list(remaining_to_find)
 
+    def delete_string_from_txt_files(self, search_folder, string_s: str) -> None:
+    
+        found_handle = False
+        # files = [file  for folder in search_folder for file in folder.iterdir() if file.suffix =='.txt']
+        files = [file for file in search_folder.rglob('*.txt') if not file.name.startswith('.')]
+        
+        for file in files:
+            strings = self.get_elements_from_file(file)
+            if string_s in strings:
+                strings.remove(string_s)
+
+                with file.open(mode="w", encoding="utf-8", newline="\n") as f:
+                    f.write('\n'.join(strings))
+                print(f'{string_s} was removed from {file.stem}')
+                found_handle = True
+
+        if not found_handle:
+            print(f'The handle {string_s} was not found inside any file in the folder {search_folder}')
+
 
 
 
@@ -232,6 +249,8 @@ if __name__ == "__main__":
     yt = YouTubeManager()
     fm = filesManager()
 
-    video_id = 'yx44bm0BEPg'
-    filename = Path("Dict_list")
+    playlist_dict = {p.stem.replace("_", " "): p  for p in playlist_folder.rglob('*.txt')}
+    align = max(len(p) for p in playlist_dict)
+    for name, path in playlist_dict.items():
+        print(f'{name+": ":<{align + 2}} {path}')
     

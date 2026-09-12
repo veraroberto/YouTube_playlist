@@ -14,7 +14,7 @@ from manage_video_ids import (get_playlist_id)
 from collections import defaultdict
 import time
 import json
-
+from typing import cast, List, Dict, Union
 class PlaylistManager():
     
     def __init__(self):
@@ -25,12 +25,19 @@ class PlaylistManager():
         self.df = self.files_manager.YT_content_creators
         
         
-    def move_video_to_playlist(self, quota_limit: int = 8000) -> None:
-        
-        
-        playlist_names =self.yt.get_all_playlists()
+    def move_video_to_playlist(self, quota_limit: int = 8000) -> None:       
+        playlist_names = self.yt.get_all_playlists()
+        if playlist_names is None:
+            print('There was not possible to get the Playlist')
+            return None
         playlist_chosen = choose_option(playlist_names, "Choose Origin Playlist")
+        if playlist_chosen is None:
+            print("There was not possible to choose a playlist")
+            return
+        if not isinstance(playlist_chosen, dict):
+            return
         playlist_names.remove(playlist_chosen)
+        playlist_chosen = cast(dict, playlist_chosen)
         source_id = playlist_chosen['id']
         print(source_id)
         source_name = playlist_chosen['name']
@@ -45,6 +52,8 @@ class PlaylistManager():
                 break
         print(f'Moving the following handles: {", ".join(sorted(move_handles, key=str.lower))}')
         another_options = ['Create New Playlist', 'Do nothing and Exit']
+        # playlist_names = cast(Union[str, Dict[str, str], playlist_names)
+        playlist_names = cast(list[dict[str, str] | str], playlist_names)
         playlist_names.extend(another_options)
         destination = choose_option(playlist_names, "Choose Destination Playlist")
         
@@ -63,6 +72,7 @@ class PlaylistManager():
             print('Doing nothing')
             return
         else:
+            destination = cast(dict, destination)
             destination_id = destination['id']
             destination_name = destination['name']
         print(f'Destination playlist is {destination_name} with the ID is {destination_id}')

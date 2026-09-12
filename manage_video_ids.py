@@ -2,21 +2,29 @@ from pathlib import Path
 from urllib.parse import urlparse, parse_qs
 from app_functions import (choose_option, 
                            search_string_folder,
-                           duration_string)
+                           remove_accents)
 from paths import (content_creator_folder,
-                   exception_folder)
+                   exception_folder,
+                   yt_channel)
 
 from filesManager import filesManager
-
+from YouTube import YouTubeManager
+from response import response_manager
+from df_manager import df_manager
+import pandas as pd
 fm = filesManager()
+yt = YouTubeManager()
+res_mng = response_manager()
 
-def get_video_id(url: str) -> str:
+def get_video_id(url: str | None = None) -> str:
+    if not url:
+        url = input("Video ID or URL: ").strip()
     url = url.strip().replace('shorts/', 'watch?v=')
     if 'https://www.youtube.com/watch?v=' not in url:
         return url
     parsed = urlparse(url)
     query = parse_qs(parsed.query)
-    return query.get("v", [0])[0]  # default to 0 if missing
+    return query.get("v", [url])[0]  # default to 0 if missing
 
 def get_playlist_id(url: str) -> str:
 
@@ -24,7 +32,7 @@ def get_playlist_id(url: str) -> str:
     query = parse_qs(parsed.query)
     return query.get("list", [url])[0]  # default to 0 if missing
 
-def add_video_manually(YouTubeManager: classmethod, response_manager: classmethod, filesManager: classmethod, url: str) -> None:
+def add_video_manually(url: str) -> None:
     if url is None:
         video_id = get_video_id(input('Video ID to add a file: '))
     else:
@@ -34,60 +42,65 @@ def add_video_manually(YouTubeManager: classmethod, response_manager: classmetho
             return
     if search_string_folder(content_creator_folder, video_id):
         return
-    response = YouTubeManager.get_response_video_id(video_id)
+    response = yt.get_response_video_id(video_id) # type: ignore
     
-    video_info = response_manager.get_video_info(response, False, True)
+    video_info = res_mng.get_video_info(response, False, True)
     if not video_info:
         print(f'Video ID {video_id} does not have any information')
         return
     
 
     channelId = video_info['channelId']
-    response_channel = YouTubeManager.get_channel_response(channelId)
-    channel_info =  response_manager.get_channel_info(response_channel)
+    response_channel = yt.get_channel_response(channelId)
+    if not response_channel:
+        print(f'There was not possible to get the Response of the channel of the Video ID: {video_id}')
+        return
+    channel_info =  res_mng.get_channel_info(response_channel)
+    if channel_info is None:
+        print(f'There was not possible to get a response for the channel of {yt_channel}{channelId}')
+        return
     handle = channel_info['customUrl']
-    
     handle_file_path = content_creator_folder / f'{handle}.txt'
 
-    for k in list(video_info.keys()):
-        if not video_info[k] or video_info[k] == 'none':
-            del video_info[k]
-
     if handle_file_path.exists():
-        response_manager.get_video_info(response, True, True)
+        res_mng.get_video_info(response, True, True)
         print('*'*75)
-        filesManager.add_element_to_file(handle_file_path, video_id, True, True)
-    else:
-        
+        fm.add_element_to_file(handle_file_path, video_id, True, True)
+    else:        
         print(f'The file handle {handle_file_path.stem} does not exists')
 
-def manage_exceptions(filesManager: classmethod) -> None:
-    options = [file for file in exception_folder.iterdir() if file.suffix == '.txt' or file.suffix == '.json']
-    options.append('New Exception File')
-    exception_file = choose_option(options, message="Choose the Exception to add: ")
-    if exception_file == options[-1]:
-        new_file_name = input('New file:').strip()
-        exception_file = exception_folder / new_file_name
-        exception_element = input(f'Video ID of a Vertical Video ID: ')
-
-    elif exception_file.suffix == '.json':
-        dictionary = fm.read_json(exception_file)
-        handle = input("Handle: ").strip().lower()
-        key = input(f"Word in title from the handle: {handle}: ").strip().lower()
-        if handle in dictionary and key not in dictionary[handle]:
-            print('The Handle Exists')
-            dictionary[handle].append(key)
-        else:
-            dictionary[handle] = [key]
-        fm.write_json(dictionary, exception_file)
-        return 
+def manage_exceptions() -> None:
+    files_dict = {file.stem: file for file in exception_folder.rglob('*') if file.suffix == '.txt' or file.suffix == '.json'}
     
+    options = list(files_dict.keys())
+    options.append('New Exception File in Txt')
+    option_choosen = choose_option(options, message="Choose the Exception to add: ")
+    handles_df = df_manager().handles_df
+    if option_choosen is None:
+        print('There was an error choosing the file')
+        return
+    elif option_choosen == options[-1]:
+        print('Creating a new file')
     else:
-        exception_element = input(f'Handle or Title to Add in {exception_file.stem}: ').lower()
-    filesManager.add_element_to_file(exception_file, exception_element, sort_list=True, print_statement=True)
-    print(exception_file)
+        file_path = files_dict[option_choosen]
+        handle = input('Handle: ').strip().lower()
+        if handle not in handles_df:
+            print(f'The handles {handle} is not in the DataFrame and is not going to be added to any excption')
+        elif file_path.suffix.lower() == '.txt':
+            fm.add_element_to_file(file_path, handle, True, True)
+        else:
+            key = input(f'The value to add in the file {file_path.name} to the handle {handle}: ').strip().lower()
+            handle_dict = fm.read_json(file_path, False)
+            if handle in handle_dict and key not in handle_dict[handle]:
+                handle_dict[handle].append(key)
+            else:
+                handle_dict[handle] = [key]
+            fm.write_json(handle_dict, file_path)
+
+
+        
 
 
 
 if __name__ == "__main__":
-    pass
+    manage_exceptions()

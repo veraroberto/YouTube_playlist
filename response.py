@@ -1,13 +1,11 @@
-import isodate
 import pandas as pd
 from filesManager import filesManager
 from pathlib import Path
 from app_functions import (duration_string,
                            print_dictionary)
-
-import json
-import re
-from paths import (yt_playlist)
+import json, isodate, re
+from paths import (yt_playlist,
+                   yt_url)
 # from urllib.request import urlopen
 
 default_date = "2005-04-24T03:31:52Z" #Timestamp of the first YouTube video ever published 
@@ -22,9 +20,9 @@ class response_manager():
     def get_video_info(self, response:  dict, print_info: bool = False, del_extra_keys: bool = False) -> dict:
         items = response.get('items', [])
         if not items:
+            # print(f"No response: {response}")
             return {}
         video_id = response['items'][0]['id']
-        
         snippet = items[0].get('snippet', {})
         publishedAt = snippet.get('publishedAt', default_date)  #Timestamp of the first YouTube video ever published 
         title = snippet.get('title', "")
@@ -57,9 +55,10 @@ class response_manager():
         if print_info:
             align = max(len(k) for k in video_id_info)
             for k in video_id_info:
-
                 if k == 'duration':
                     print(f"{k+": ":<{align + 2}} {duration_string(video_id_info[k])}")
+                elif k == 'video_id':
+                    print(f"{k+": ":<{align + 2}} {yt_url}{video_id_info[k]}")
                 elif isinstance(video_id_info[k], dict) and video_id_info[k]:
                     print(k+": ")
                     align_2 = max(len(k_2) for k_2 in video_id_info[k])
@@ -72,7 +71,7 @@ class response_manager():
                     print(f"{k+": ":<{align + 2}} {video_id_info[k]}")
         return video_id_info
 
-    def get_channel_info(self, channel_response: dict) -> dict:
+    def get_channel_info(self, channel_response: dict) -> dict | None:
         items = channel_response.get('items', {})
         if not items:
             print("The Channel Doesn't have information ")
@@ -106,7 +105,7 @@ class response_manager():
         }
         return channel_info
 
-    def get_playlist_info(self, playlist_response: dict, print_info: bool = False) -> dict:
+    def get_playlist_info(self, playlist_response: dict, print_info: bool = False) -> dict | None:
         items = playlist_response.get('items',{})
         playlist_id = items[0].get('id','')
         if not items:
@@ -125,6 +124,7 @@ class response_manager():
         if not contentDetails:
             print('There is not contentDetails in the Playlist')
             return
+        itemCount = contentDetails.get('itemCount')
         
         playlist_info = {
             'title': title,
@@ -132,6 +132,7 @@ class response_manager():
             'channelId': channelId,
             'channelTitle': title,
             'uploads': playlist_id,
+            'itemCount': itemCount
         }
         if print_info:
             align = max(len(k) for k in playlist_info)
@@ -140,30 +141,21 @@ class response_manager():
                     print(f'{k+": ":<{align + 2 }}{yt_playlist}{v}')
                 else:
                     print(f'{k+": ":<{align + 2 }}{v}')
-                    
-                    
         return playlist_info
 
     def get_added_video_response_info(self, added_response: dict, print_info: bool = False) -> dict | None:
         id_response = added_response.get('id')
-        # print(id_response)
         snippet = added_response.get('snippet', {})
         if not snippet:
             print(f'The video ID {id_response} does not have a snippet in the Added response')
             return
-        resourceId = snippet.get('resourceId')
-        videoId = resourceId.get('videoId')
+
         title = snippet.get('title')
-        videoOwnerChannelTitle = snippet.get('videoOwnerChannelTitle')
-        
-        contentDetails = added_response.get('contentDetails', {})
-        videoPublishedAt = contentDetails.get('videoPublishedAt')      
+        publishedAt = snippet.get('publishedAt') 
         response_info = {
             'id_response': id_response,
-            'videoPublishedAt': videoPublishedAt,
+            'publishedAt': publishedAt,
             'title': title,
-            'videoOwnerChannelTitle': videoOwnerChannelTitle,
-            'videoId': videoId
         }
         if print_info:
             print_dictionary(response_info)
@@ -216,9 +208,10 @@ class response_manager():
         self.files_manager.write_csv_safely(df, file_path)
 
 if __name__ == '__main__':
-    from YouTube import YouTubeManager
+    fm = filesManager()
     rsp_mng = response_manager()
-
+    added_response = fm.read_json(Path("Added_response.json"))
+    rsp_mng.get_added_video_response_info(added_response, True)
     # yt = YouTubeManager()
     # playlist_id = 'PLCFlKAAOW47g'
     # playlist_response = yt.get_response_from_playlist_id(playlist_id)

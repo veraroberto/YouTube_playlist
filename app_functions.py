@@ -2,10 +2,10 @@ import unicodedata
 import os
 import requests
 from bs4 import BeautifulSoup
-# from urllib.parse import urlparse, parse_qs
+from urllib.parse import urlparse, parse_qs
 from pathlib import Path
 
-from paths import content_creator_folder
+# from paths import content_creator_folder
 # from YouTube import yt_url
 
 def clear_terminal() -> None:
@@ -15,38 +15,49 @@ def clear_terminal() -> None:
     else:
         _ = os.system('clear')
 
-def generate_label(options: list) -> dict:
+def generate_label(options: list | dict) -> dict:
         option_map = {}
-        align = len(str(len(options) % 26)) + 3
+        if isinstance(options, list):
+            align = len(str(len(options) % 26)) + 3
+            for i, value in enumerate(options, 1):
+                label = ""
+                n = i
+                while n > 0:
+                    n, remainder = divmod(n - 1, 26)
+                    label = chr(65 + remainder) + label
+                option_map[label] = value
+                a_label = f"[{label}]"
+                print(f"{a_label:<{4}} {value}")
+            return option_map
+        else:
+            align = max(len(k) for k in options)
+            for i, (key, value) in enumerate(options.items(),1):
+                label = ""
+                n = i
+                while n > 0:
+                    n, remainder = divmod(n - 1, 26)
+                    label = chr(65 + remainder) + label
+                option_map[label] = key
+                a_label = f"[{label}]"
+                print(f"{a_label:>{4}} {key:<{align}} {value}")
 
-        for i, value in enumerate(options, 1):
-            label = ""
-            n = i
-            while n > 0:
-                n, remainder = divmod(n - 1, 26)
-                label = chr(65 + remainder) + label
-            
-            option_map[label] = value
-            a_label = f"[{label}]"
-            print(f"{a_label:<{4}} {value}")
-        return option_map
+            return option_map
 
-def choose_option(options: list, message: str = "Enter your choice: ") -> str | None:
-    if not isinstance(options, list):
-        raise TypeError(f"Expected a list, but got {type(options).__name__}")
-    
+def choose_option(options: list | dict, message: str = "Enter your choice: ", print_final_mssg: bool = False) ->  str | None:
+    if not isinstance(options, list) and not isinstance(options, dict):
+        raise TypeError(f"Expected a list or dictionary, but got {type(options).__name__}")
     if not options:
         return None
 
-    # 1. Create the mapping using the math helper
     print(f'{message}')
     option_map = generate_label(options)
-  
     while True:
         choice = input("Select an option: ").strip().upper()
-        if not choice: # Handle empty Enter key
+        if not choice: # Empty Enter key
             continue
         if choice in option_map:
+            if print_final_mssg:
+                print(f"Selected: {option_map[choice]}")
             return option_map[choice]
         print(f"Invalid choice '{choice}'. Please pick a label from the list.")
 
@@ -66,6 +77,20 @@ def duration_string(duration: float | int) -> str:
         return duration_string
     else:
         print(f'{duration} is not a number')
+
+def get_video_id(url: str) -> str:
+    url = url.strip().replace('shorts/', 'watch?v=')
+    if 'https://www.youtube.com/watch?v=' not in url:
+        return url
+    parsed = urlparse(url)
+    query = parse_qs(parsed.query)
+    return query.get("v", [url])[0]  # default to 0 if missing
+
+def get_playlist_id(url: str) -> str:
+
+    parsed = urlparse(url)
+    query = parse_qs(parsed.query)
+    return query.get("list", [url])[0]  # default to 0 if missing
 
 def is_short(video_id: str) -> bool | None:
     url = f'https://www.youtube.com/shorts/{video_id}'
