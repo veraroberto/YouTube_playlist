@@ -3,22 +3,10 @@ __pycache__/
 .env
 venv/
 .DS_Store
-# Content Creators/
-# Content Creators Response/
-# Exceptions/
-# Playlists/
-# Restrictions/
-# Stats/
-# Tokens/
-# Special/
-# HTML/
 /*/
 API_KEY.py
 *.ipynb
-.ipynb_checkpoints/
-*.ipynb_checkpoints
 *test*
-*special*
 *.html
 *.json
 *.txt
