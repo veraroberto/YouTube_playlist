@@ -140,8 +140,8 @@ class PlaylistManager():
     
 
 if __name__ =='__main__':
-    pass
-
+    name = "Adding XK7GjvkSoRA from stuart_fails_to_save_the_universe_official_podcast__hbo"
+    print(len(name))
 
 
         

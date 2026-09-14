@@ -11,5 +11,6 @@ API_KEY.py
 *.json
 *.txt
 *.csv
+*.pickle
 environment.local.yml
 WL.py

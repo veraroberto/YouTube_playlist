@@ -30,7 +30,7 @@ Run the main.py file. You should have no problem with the execution.
 
 ## Motivation
 
-- This project creates private playlists and automatically adds new videos| helping you keep your saved YouTube content organized.
+- This project creates private playlists and automatically adds new videos, helping you keep your saved YouTube content organized.
 - It was created to reduce manual playlist management and make better use of the YouTube API.
 
 ## Project Structure
@@ -55,7 +55,7 @@ pip install -r requirements.txt
 ### 2. Run the program
 
 ```bash
-python main.py <command> [options]
+python main.py
 ```
 
 ### 🧰 Command Descriptions

@@ -8,7 +8,8 @@ from paths import (content_creator_folder,
                    restriction_folder,
                    html_folder,
                    yt_url,
-                   yt_channel)
+                   yt_channel,
+                   clear_row)
 from typing import cast
 from response import response_manager
 
@@ -43,12 +44,10 @@ df_mnr = df_manager()
 
 
 def main(add_video_ids_to_playlist: bool = True) -> None:
-
     YT_df = fm.YT_content_creators
     YT_content_creators_iter = df_mnr.get_df_to_iterate(playlist_folder, YT_df)
     if YT_content_creators_iter is None:
         return
-
     ## Creates the Dictionary of the Playlists
     playlist_names = yt.get_all_playlists()
     if not playlist_names:
@@ -80,7 +79,7 @@ def main(add_video_ids_to_playlist: bool = True) -> None:
         youtube_playlists[playlist]['Playlist_ID'] = playlist_id
 
         if playlist_id:
-            video_ids = yt.get_all_ids_playlist(playlist_id, 300)
+            video_ids = yt.get_all_ids_playlist(playlist_id, 300, count_repeated=True)
 
             if not video_ids:
                 if playlist_id in YT_df['uploads'].values:
@@ -191,8 +190,8 @@ def main(add_video_ids_to_playlist: bool = True) -> None:
         channelTitle = row.channelTitle
         channelId = row.channelId
         uploads = cast(str, row.uploads)
-        message = f'{ cast(int, row.Index) + 1:0{digits}d} / {num_rows}: {channelTitle}'
-        print(message + '\033[K', end='\r')
+        message = f'{ cast(int, row.Index) + 1:0{digits}d} / {num_rows}: {channelTitle} line 193'
+        print(message + clear_row, end='\r')
         iterations = 1
         if handle in more_iterations:
             """
@@ -266,7 +265,7 @@ def main(add_video_ids_to_playlist: bool = True) -> None:
         if was_braked:
             break
 
-    print(f'Duration to getting the new IDs => {duration_string(time.time() - start)}' + '\033[K')
+    print(f'Duration to getting the new IDs => {duration_string(time.time() - start)}' + clear_row)
     if not was_braked:
         total_duration = sum(video_id['duration'] for playlist in youtube_playlists for video_id in youtube_playlists[playlist]['new_video_ids'])
         print(f"Duration of all the new Video IDs => {duration_string(total_duration)}")
@@ -275,7 +274,6 @@ def main(add_video_ids_to_playlist: bool = True) -> None:
         print(f'There are {total_videos} total videos to add')
     else:
         print('There is an error with the request function. You might be blocked')
-        pass
 
     quota_limit = 9700
     was_braked = False
@@ -299,7 +297,6 @@ def main(add_video_ids_to_playlist: bool = True) -> None:
                     continue
                 playlist_id = response_playlist.get('id')
                 youtube_playlists[playlist]["Playlist_ID"] = playlist_id
-
                 if not playlist_id:
                     continue
                 if "shorts" in playlist.lower():
@@ -309,13 +306,13 @@ def main(add_video_ids_to_playlist: bool = True) -> None:
             for video_info in new_video_ids:
                 file_path = video_info['file_path']
                 video_id = video_info['video_id']
-                message = f'Adding {video_id} from {file_path.stem} to the playlist {playlist}' + '\033[K'
-                print(message + '\033[K', end='\r')
+                message = f'Adding {video_id} from {file_path.stem[0:50]} to the playlist {playlist}' + clear_row +"line 309"
+                print(message + clear_row, end='\r')
                 if not add_video_ids_to_playlist:
                     not_added_videos[playlist].append(video_info)
                 elif fm.get_today_quota() > quota_limit:
                     add_video_ids_to_playlist = False
-                    break_message = f'The process was interrupted. The last video is {video_id} from {file_path.name}' + '\033[K'
+                    break_message = f'The process was interrupted. The last video is {video_id} from {file_path.name}' + clear_row
                     was_braked = True
                 elif add_video_ids_to_playlist and video_id not in youtube_playlists[playlist]['video_ids']:# and
                     if yt.add_video_to_playlist(playlist_id, video_id):
@@ -328,7 +325,7 @@ def main(add_video_ids_to_playlist: bool = True) -> None:
         print(break_message)
 
     consumed_quota = fm.get_today_quota(False) - quota_i
-    print(f'It was consumed {consumed_quota:,} quotas in the adding process and the final quota is {fm.get_today_quota(False):,}\033[K')
+    print(f'It was consumed {consumed_quota:,} quotas in the adding process\033[K')
     if added_videos:
         alignment = max(len(playlist) for playlist in added_videos)
         sorted_keys = sorted(added_videos, key=lambda x:sum(video['duration'] for video in added_videos[x]), reverse=True)

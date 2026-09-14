@@ -143,7 +143,7 @@ class YouTubeManager:
         return subscriptions
 
     def get_all_ids_playlist(self, playlist_id: str | None, max_iterations: int = 5,
-                             print_iterations: bool= False) -> list:
+                             print_iterations: bool= False, count_repeated: bool = False) -> list:
         # The API only allows a max_iteration = 400
         if playlist_id is None:
             print('The Playlist ID is None. Doing Nothing')
@@ -177,14 +177,15 @@ class YouTubeManager:
             if print_iterations:
                 print(f'There were {iterations} iterations in the process. The original number of iteration were {max_iterations}\033[K')
                 print(f'There are {len(video_ids)} videos in the playlist')
-            counted_vids = Counter(video_ids)
-            if any(c > 1 for c in counted_vids.values()):
-                print(f'Repeated elements in {yt_playlist}{playlist_id}\033[K')
-                for e, count in counted_vids.items():
-                    if count > 1:
-                        print(f'Repated {count}: {yt_url}{e}')
-                        indexes = [str(index) for index, element in enumerate(video_ids,1) if element == e]
-                        print(f'{e} => indexes {", ".join(indexes)}')
+            if count_repeated:
+                counted_vids = Counter(video_ids)
+                if any(c > 1 for c in counted_vids.values()):
+                    print(f'Repeated elements in {yt_playlist}{playlist_id}\033[K')
+                    for e, count in counted_vids.items():
+                        if count > 1:
+                            print(f'Repated {count}: {yt_url}{e}')
+                            indexes = [str(index) for index, element in enumerate(video_ids,1) if element == e]
+                            print(f'{e} => indexes {", ".join(indexes)}')
             return video_ids
         except HttpError as e:
             print(f"An error occurred while getting all the Playlist IDs {yt_playlist}{playlist_id}: \033[K\n{e}")
