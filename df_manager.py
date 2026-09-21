@@ -11,7 +11,8 @@ from app_functions import (choose_option,
 from paths import (playlist_folder,
                    exception_folder,
                    content_creator_folder,
-                   yt_url)
+                   yt_url,
+                   DATA_DIR)
 # from manage_video_ids import manage_exceptions
 from typing import cast
 from pathlib import Path
@@ -210,7 +211,7 @@ class df_manager:
             self.files_manager.write_csv_safely(self.YT_content_creators, self.file_path_yt_creators)
             print(f'{handle} was removed from the Data Frame')
         
-        for file_handle in Path.cwd().rglob('*'):
+        for file_handle in DATA_DIR.rglob('*'):
             if file_handle.stem == handle:
                 try:
                     file_handle.unlink()

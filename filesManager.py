@@ -244,13 +244,10 @@ class filesManager:
 
 
 if __name__ == "__main__":
-    from YouTube import YouTubeManager
-    # from collections import Counter
-    yt = YouTubeManager()
+    from app_functions import (clear_terminal)
+    clear_terminal()
     fm = filesManager()
-
-    playlist_dict = {p.stem.replace("_", " "): p  for p in playlist_folder.rglob('*.txt')}
-    align = max(len(p) for p in playlist_dict)
-    for name, path in playlist_dict.items():
-        print(f'{name+": ":<{align + 2}} {path}')
-    
+    dictionary = fm.read_json(Path("All_handles_in_playlist.json"))
+    align = max(len(k) for k in dictionary)
+    for k, value in dictionary.items():
+        print(f'{k:<{align}} {len(value):>2}')

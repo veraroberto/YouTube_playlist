@@ -30,7 +30,8 @@ class response_manager():
         channelId = snippet.get('channelId', "")
         contentDetails = items[0].get('contentDetails', {})
         regionRestriction = contentDetails.get('regionRestriction',{})
-
+        statistics = items[0].get('statistics', {})
+        viewCount = statistics.get('viewCount')
         duration_iso = contentDetails.get('duration', 'PT0S')
         duration = isodate.parse_duration(duration_iso).total_seconds()
         liveBroadcastContent = snippet.get('liveBroadcastContent', None)
@@ -43,7 +44,8 @@ class response_manager():
                          'duration' : duration,
                          'liveBroadcastContent': liveBroadcastContent,
                          'liveStreamingDetails': liveStreamingDetails,
-                         'regionRestriction':regionRestriction
+                         'regionRestriction':regionRestriction,
+                         'viewCount': viewCount,
                         }
         if del_extra_keys:
             if not regionRestriction:
@@ -162,7 +164,7 @@ class response_manager():
 
         return response_info
     
-    def is_restricted(self, response: dict) -> None | dict:
+    def is_restricted(self, response: dict, print_restriction: bool = False) -> None | dict:
         items = response.get('items', [])
         if not items:
             print('There is no items response')
@@ -174,6 +176,13 @@ class response_manager():
             blocked = regionRestriction.get('blocked', [])
             allowed = regionRestriction.get('allowed', [])
             if self.current_country in blocked or (allowed and self.current_country not in allowed):
+                if print_restriction:
+                    video_info = self.get_video_info(response)
+                    video_id = video_info.get('video_id')
+                    print("Restricted Zone:")
+                    print(f"{yt_url}{video_id}")
+                    for k, v in regionRestriction.items():
+                        print(f"{k} {', '.join(v)}")
                 return regionRestriction
 
     def add_response_df(self, file_path: Path, response: dict) -> None:    

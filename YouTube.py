@@ -22,7 +22,8 @@ from app_functions import (create_bookmarks,
 
 from filesManager import filesManager
 from collections import defaultdict
-from paths import (tokens_folder)
+from paths import (tokens_folder,
+                   playlist_folder)
 
 from typing import cast
 from urllib.parse import (urlparse,
@@ -76,11 +77,10 @@ class YouTubeManager:
             print("Video ID is None")
             return {}
         response = self.youtube.videos().list(
-            part="snippet,contentDetails,liveStreamingDetails",
+            part="snippet,contentDetails,liveStreamingDetails,statistics",
             id=video_id
         ).execute()
         self.files_manager.add_to_today_quota(1)
-        # if print_response:
         video_info = self.response_mng.get_video_info(response, print_response, True)
         if not video_info:
             return {}
@@ -309,16 +309,16 @@ class YouTubeManager:
                                       print_handles: bool = False,
                                       sort_by_duration: bool = False,
                                       create_restricted_html: bool = False,
-                                      iterations: int = 10) -> dict | None:
+                                      iterations: int = 10) -> dict:
         if playlist_id is None:
             print('The playlist ID is None. Nothing is going to be done')
-            return
+            return {}
         df = self.files_manager.YT_content_creators
         if playlist_id == 'LL':
             iterations = 6
         video_ids = self.get_all_ids_playlist(playlist_id, iterations)
         if not video_ids:
-            return
+            return {}
         print(f'There are {len(video_ids)} in the playlist')
         handles_playlist = defaultdict(list)
         restricted_url = defaultdict(str)
@@ -354,7 +354,7 @@ class YouTubeManager:
                     continue
                 channel_info = self.response_mng.get_channel_info(channel_response)
                 if not isinstance(channel_info, dict):
-                    return
+                    continue
                 
                 handle = channel_info['customUrl']
             if video_info not in handles_playlist[handle]:
@@ -374,6 +374,30 @@ class YouTubeManager:
         
         return handles_playlist
 
+    def get_handles_from_all_playlists(self):
+        playlists = [file.stem.replace('_', ' ') for file in playlist_folder.iterdir() if file.suffix.lower() == '.txt']
+        align = max(len(p) for p in playlists)
+        playlist_info = self.get_all_playlists()
+        all_playlist_handles = {}
+        for playlist_name in playlists:
+            playlist_id = next((d["id"] for d in playlist_info if playlist_name in d.values()), None)
+            if playlist_id:
+                handles_dict = self.get_all_handles_from_playlist(playlist_id)
+                for k, value in handles_dict.items():
+                    if k in all_playlist_handles:
+                        all_playlist_handles[k].extend(value)
+                    else:
+                        all_playlist_handles[k] = value
+
+        align = max(len(k) for k in all_playlist_handles)
+        sorted_handles = sorted(all_playlist_handles, key= lambda x: len(all_playlist_handles[x]), reverse=True)
+        for k in sorted_handles:
+            print(f"{k:<{align}} {len(all_playlist_handles[k])}")
+        fm.write_json(all_playlist_handles, Path("All_handles_in_playlist.json"))
+        return all_playlist_handles
+            
+
+                        
     def get_playlist_duration(self) -> float | None:
         playlist_id = input("Playlist ID: ").strip()
         if 'youtube.com' in playlist_id:
@@ -503,51 +527,44 @@ class YouTubeManager:
 if __name__ =='__main__':
     yt = YouTubeManager()
     fm = filesManager()
-    youtube = yt.youtube
-    request = youtube.channels().list(
-        part="contentDetails,snippet",
-        mine=True,
-        maxResults=50
-    ).execute()
-    fm.add_to_today_quota(1)
-    print_dictionary(request)
+    # yt.get_handles_from_all_playlists()
     # resp_mng = response_manager()
     # fm = filesManager()
-    # from API_KEY import watch_later_id 
-    # from app_functions import (get_video_id)
-    # clear_terminal()
+    from API_KEY import watch_later_id 
+    from app_functions import (get_video_id)
+    clear_terminal()
     # selected = yt.choose_parameter_playlist_id(message="Choose a Playlist", create_playlist=False)
     # print(selected)
 
-    # dict_functions = {
-    #     "Get Handles for a Playlist: ": lambda: yt.get_all_handles_from_playlist(
-    #                                             playlist_id= yt.choose_parameter_playlist_id().get('id'),
-    #                                             delete_video = True,
-    #                                             print_handles = True, 
-    #                                             sort_by_duration = False, 
-    #                                             create_restricted_html = True,
-    #                                             iterations=10),
-    #     "View repeated Video IDs in a playlist": lambda: yt.get_all_ids_playlist(
-    #                                                     playlist_id = yt.choose_parameter_playlist_id().get('id'),
-    #                                                     count_repeated = True),
-    #     "Get a Video Response": lambda: yt.get_response_video_id(
-    #                                     video_id=get_video_id(input("Video ID or URL: ")),
-    #                                     print_response=True),
-    #     "Print the Playlist Response": lambda: yt.get_response_from_playlist_id(
-    #                                             playlist_id= yt.choose_parameter_playlist_id().get('id'),
-    #                                             print_response=True),
+    dict_functions = {
+        "Get Handles for a Playlist: ": lambda: yt.get_all_handles_from_playlist(
+                                                playlist_id= yt.choose_parameter_playlist_id().get('id'),
+                                                delete_video = True,
+                                                print_handles = True, 
+                                                sort_by_duration = False, 
+                                                create_restricted_html = True,
+                                                iterations=10),
+        "View repeated Video IDs in a playlist": lambda: yt.get_all_ids_playlist(
+                                                        playlist_id = yt.choose_parameter_playlist_id().get('id'),
+                                                        count_repeated = True),
+        "Get a Video Response": lambda: yt.get_response_video_id(
+                                        video_id=get_video_id(input("Video ID or URL: ")),
+                                        print_response=True),
+        "Print the Playlist Response": lambda: yt.get_response_from_playlist_id(
+                                                playlist_id= yt.choose_parameter_playlist_id().get('id'),
+                                                print_response=True),
         
-    #     "Do nothing": None}
-    # while True:
-    #     choose_function = choose_option(list(dict_functions.keys()), f"Choose a Function")
-    #     if choose_function:
-    #         if dict_functions[choose_function] is None:
-    #             print("Doing Nothing")
-    #             break
-    #         else:
-    #             dict_functions[choose_function]()
-    #     continue_option = choose_option([True, False], "Continue with another functionn: ")
-    #     if not continue_option:
-    #         break
-        # clear_terminal()
+        "Do nothing": None}
+    while True:
+        choose_function = choose_option(list(dict_functions.keys()), f"Choose a Function")
+        if choose_function:
+            if dict_functions[choose_function] is None:
+                print("Doing Nothing")
+                break
+            else:
+                dict_functions[choose_function]()
+        continue_option = choose_option([True, False], "Continue with another functionn: ")
+        if not continue_option:
+            break
+        clear_terminal()
         

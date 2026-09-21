@@ -30,7 +30,6 @@ restriction_folder = DATA_DIR / 'Restrictions'
 stats_folder = DATA_DIR / 'Stats'
 tokens_folder = DATA_DIR / "Tokens"
 html_folder = DATA_DIR / 'HTML'
-print(html_folder)
 
 if not content_creator_folder.exists():
     content_creator_folder.mkdir(parents=True, exist_ok=True)

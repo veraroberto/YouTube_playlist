@@ -104,3 +104,4 @@ def manage_exceptions() -> None:
 
 if __name__ == "__main__":
     manage_exceptions()
+  

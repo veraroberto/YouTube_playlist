@@ -190,7 +190,7 @@ def main(add_video_ids_to_playlist: bool = True) -> None:
         channelTitle = row.channelTitle
         channelId = row.channelId
         uploads = cast(str, row.uploads)
-        message = f'{ cast(int, row.Index) + 1:0{digits}d} / {num_rows}: {channelTitle} line 193'
+        message = f'{ cast(int, row.Index) + 1:0{digits}d} / {num_rows}: {channelTitle}'
         print(message + clear_row, end='\r')
         iterations = 1
         if handle in more_iterations:
@@ -228,6 +228,11 @@ def main(add_video_ids_to_playlist: bool = True) -> None:
                 clean_title = remove_accents(title.lower())
                 if video_id_info['liveBroadcastContent'] == 'upcoming' or  video_id_info['duration'] == 0:
                     continue
+                elif video_id_info['viewCount'] is None:
+                    print('*'*50 + clear_row)
+                    print(f'The video might be members only. Not adding it')
+                    response_mnr.get_video_info(response, print_info=True)
+                    fm.add_element_to_file(file_path, video_id, False)
                 elif response_mnr.is_restricted(response):
                     fm.add_element_to_file(file_path, video_id, False)
                     response_mnr.add_response_df(restriction_folder / f'{handle}.csv', response)
@@ -306,7 +311,7 @@ def main(add_video_ids_to_playlist: bool = True) -> None:
             for video_info in new_video_ids:
                 file_path = video_info['file_path']
                 video_id = video_info['video_id']
-                message = f'Adding {video_id} from {file_path.stem[0:50]} to the playlist {playlist}' + clear_row +"line 309"
+                message = f'Adding {video_id} from {file_path.stem[0:50]} to the playlist {playlist}' + clear_row
                 print(message + clear_row, end='\r')
                 if not add_video_ids_to_playlist:
                     not_added_videos[playlist].append(video_info)
@@ -380,8 +385,8 @@ def add_video() -> None:
 
 def manage_df() -> None:
     functions_dict = {
+        'Add new row to the Data Frame': df_mnr.add_row_df,
         'Delete Information from files': df_mnr.delete_information_in_files,
-        'Add new row to the Data Frame': df_mnr.add_row_df
     }
     list_keys = list(functions_dict.keys())
     function = choose_option(list_keys,'Choose a Function: ')
@@ -448,20 +453,29 @@ def add_video_list() -> None:
     return
 
 if __name__ == "__main__":
-    function_dict = {"Main": lambda: main(),
-                     "Only get current quota": None,
-                     "Manually add Video": lambda:  add_video(),
-                     "Only create the HTML files and don't add the videos": lambda: main(False),
-                     "Exception Manager": lambda: manage_exceptions(),
-                     "Add / Remove row from DF": lambda: manage_df(),
-                     "Playlist Manager": lambda: manage_playlist(),
-                     "Add a list of videos from the Clipboard": lambda: add_video_list(),
-                     }
-
-    function_choosen = choose_option(list(function_dict.keys()), "Choose an action")
-    clear_terminal()
-    if function_choosen and function_dict[function_choosen]:
-        function_dict[function_choosen]()
     
-    fm.get_today_quota(True)
+    pass
+
+
+    # function_dict = {"Main": lambda: main(),
+    #                  "Only get current quota": None,
+    #                  "Manually add Video": lambda:  add_video(),
+    #                  "Only create the HTML files and don't add the videos": lambda: main(False),
+    #                  "Exception Manager": lambda: manage_exceptions(),
+    #                  "Add / Remove row from DF": lambda: manage_df(),
+    #                  "Playlist Manager": lambda: manage_playlist(),
+    #                  "Add a list of videos from the Clipboard": lambda: add_video_list(),
+    #                  "Exit": None
+    #                  }
+
+    # function_choosen = choose_option(list(function_dict.keys()), "Choose an action")
+    # clear_terminal()
+    # if function_choosen and function_dict[function_choosen]:
+    #     function_dict[function_choosen]()
+    # else:
+    #     print(f'Doing Nothing {clear_row}')
+    
+    # fm.get_today_quota(True)
+
+
 
