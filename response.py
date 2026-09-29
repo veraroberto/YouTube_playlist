@@ -42,10 +42,10 @@ class response_manager():
                          'publishedAt': publishedAt,
                          'title': title,
                          'duration' : duration,
+                         'viewCount': viewCount,
                          'liveBroadcastContent': liveBroadcastContent,
                          'liveStreamingDetails': liveStreamingDetails,
                          'regionRestriction':regionRestriction,
-                         'viewCount': viewCount,
                         }
         if del_extra_keys:
             if not regionRestriction:
@@ -56,21 +56,23 @@ class response_manager():
                 del video_id_info['liveStreamingDetails']
         if print_info:
             align = max(len(k) for k in video_id_info)
-            for k in video_id_info:
+            for k, v in video_id_info.items():
                 if k == 'duration':
-                    print(f"{k+": ":<{align + 2}} {duration_string(video_id_info[k])}")
+                    print(f"{k+": ":<{align + 2}} {duration_string(v)}")
                 elif k == 'video_id':
-                    print(f"{k+": ":<{align + 2}} {yt_url}{video_id_info[k]}")
-                elif isinstance(video_id_info[k], dict) and video_id_info[k]:
+                    print(f"{k+": ":<{align + 2}} {yt_url}{v}")
+                elif k == 'viewCount' and v.isdigit():
+                    print(f"{k+": ":<{align + 2}} {int(v):,}")
+                elif isinstance(v, dict) and v:
                     print(k+": ")
-                    align_2 = max(len(k_2) for k_2 in video_id_info[k])
-                    for key, val in video_id_info[k].items():
+                    align_2 = max(len(k_2) for k_2 in v)
+                    for key, val in v.items():
                         if isinstance(val, list):
                             print(f'{" " *(align + 3)}{key+": ":<{align_2 + 2}} {", ".join(val)}')
                         else:
                             print(f'{" " *(align + 3)}{key+": ":<{align_2 + 2}} {val}')
                 else:
-                    print(f"{k+": ":<{align + 2}} {video_id_info[k]}")
+                    print(f"{k+": ":<{align + 2}} {v}")
         return video_id_info
 
     def get_channel_info(self, channel_response: dict) -> dict | None:
@@ -217,14 +219,6 @@ class response_manager():
         self.files_manager.write_csv_safely(df, file_path)
 
 if __name__ == '__main__':
-    fm = filesManager()
-    rsp_mng = response_manager()
-    added_response = fm.read_json(Path("Added_response.json"))
-    rsp_mng.get_added_video_response_info(added_response, True)
-    # yt = YouTubeManager()
-    # playlist_id = 'PLCFlKAAOW47g'
-    # playlist_response = yt.get_response_from_playlist_id(playlist_id)
-    # rsp_mng.get_playlist_info(playlist_response, True)
-  
+    pass
 
     
