@@ -9,7 +9,8 @@ from paths import (content_creator_folder,
                    html_folder,
                    yt_url,
                    yt_channel,
-                   clear_row)
+                   clear_row,
+                   reset_format)
 from typing import cast
 from response import response_manager
 
@@ -115,6 +116,8 @@ def main(add_video_ids_to_playlist: bool = True) -> None:
     missing_video_ids = fm.find_missing_elements(all_ids_from_playlist)
     missing_video_ids = [x for x in missing_video_ids if x not in vertical_video_id]
 
+    print_all_responses = fm.get_elements_from_file(exception_folder / "print_all_responses.txt", create_file=True)
+
     if missing_video_ids:
         print(f'There are {len(missing_video_ids)} videos not in the files')
 
@@ -206,7 +209,8 @@ def main(add_video_ids_to_playlist: bool = True) -> None:
             elif uploads in YT_df['uploads'].values:
                 channelId = YT_df[YT_df['uploads'] == uploads]['channelId'].iloc[0]
                 channelTitle = YT_df[YT_df['uploads'] == uploads]['channelTitle'].iloc[0]
-                print(f"The Channel {channelTitle} might be deleted: {yt_channel}{channelId}\033[K")
+                
+                print(f"The Channel {channelTitle} with the handle {handle} might be deleted: {yt_channel}{channelId}\033[K")
 
         videos_ids.reverse()
         file_path = content_creator_folder / f'{handle}.txt'
@@ -214,6 +218,7 @@ def main(add_video_ids_to_playlist: bool = True) -> None:
         playlist_key = next((key for key, handles in youtube_playlists.items() if handle in handles.get('Handles',[])), None)
 
         for index, video_id in enumerate(videos_ids,1):
+
             if video_id not in handle_ids:
                 response = yt.get_response_video_id(video_id)
                 if not response:
@@ -226,6 +231,10 @@ def main(add_video_ids_to_playlist: bool = True) -> None:
                 title = video_id_info["title"]
                 exception_title = handle_dict_name_excepts.get(handle, [])
                 clean_title = remove_accents(title.lower())
+                if handle in print_all_responses:
+                    print(f"\033[1;32m", "*"*50)
+                    response_mnr.get_video_info(response, print_info=True)
+                    print(f'{"*"*50}{reset_format}')
                 if video_id_info['liveBroadcastContent'] == 'upcoming' or  video_id_info['duration'] == 0:
                     continue
                 elif video_id_info['viewCount'] is None:
@@ -453,29 +462,26 @@ def add_video_list() -> None:
     return
 
 if __name__ == "__main__":
+
+    function_dict = {"Main": lambda: main(),
+                     "Only get current quota": None,
+                     "Manually add Video": lambda:  add_video(),
+                     "Only create the HTML files and don't add the videos": lambda: main(False),
+                     "Exception Manager": lambda: manage_exceptions(),
+                     "Add / Remove row from DF": lambda: manage_df(),
+                     "Playlist Manager": lambda: manage_playlist(),
+                     "Add a list of videos from the Clipboard": lambda: add_video_list(),
+                     "Exit": None
+                     }
+
+    function_choosen = choose_option(list(function_dict.keys()), "Choose an action")
+    clear_terminal()
+    if function_choosen and function_dict[function_choosen]:
+        function_dict[function_choosen]()
+    else:
+        print(f'Doing Nothing {clear_row}')
     
-    pass
-
-
-    # function_dict = {"Main": lambda: main(),
-    #                  "Only get current quota": None,
-    #                  "Manually add Video": lambda:  add_video(),
-    #                  "Only create the HTML files and don't add the videos": lambda: main(False),
-    #                  "Exception Manager": lambda: manage_exceptions(),
-    #                  "Add / Remove row from DF": lambda: manage_df(),
-    #                  "Playlist Manager": lambda: manage_playlist(),
-    #                  "Add a list of videos from the Clipboard": lambda: add_video_list(),
-    #                  "Exit": None
-    #                  }
-
-    # function_choosen = choose_option(list(function_dict.keys()), "Choose an action")
-    # clear_terminal()
-    # if function_choosen and function_dict[function_choosen]:
-    #     function_dict[function_choosen]()
-    # else:
-    #     print(f'Doing Nothing {clear_row}')
-    
-    # fm.get_today_quota(True)
+    fm.get_today_quota(True)
 
 
 

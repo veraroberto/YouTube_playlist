@@ -64,8 +64,11 @@ if not html_folder.exists():
     print(f'The folder {html_folder.stem} was created')        
 
 
-
+# ANSI escape sequences
 clear_row = '\033[K'
+reset_format = '\033[0m'
+
+
 columns_df = ['Handle', 'channelTitle', 'channelId', 'uploads']
 
 yt_url = 'https://www.youtube.com/watch?v='

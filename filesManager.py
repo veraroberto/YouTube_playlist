@@ -17,37 +17,6 @@ from paths import (content_creator_folder,
 
 class filesManager:   
     def __init__(self):
-        # if not content_creator_folder.exists():
-        #     content_creator_folder.mkdir(parents=True, exist_ok=True)
-        #     print(f'The folder {content_creator_folder.stem} was created')
-
-        # if not content_creator_folder_response.exists():
-        #     content_creator_folder_response.mkdir(parents=True, exist_ok=True)
-        #     print(f'The folder {content_creator_folder_response.stem} was created')
-
-        # if not exception_folder.exists():
-        #     exception_folder.mkdir(parents=True, exist_ok=True)
-        #     print(f'The folder {exception_folder.stem} was created')
-
-        # if not playlist_folder.exists():
-        #     playlist_folder.mkdir(parents=True, exist_ok=True)
-        #     print(f'The folder {playlist_folder.stem} was created')
-
-        # if not restriction_folder.exists():
-        #     restriction_folder.mkdir(parents=True, exist_ok=True)
-        #     print(f'The folder {restriction_folder.stem} was created')
-
-        # if not stats_folder.exists():
-        #     stats_folder.mkdir(parents=True, exist_ok=True)
-        #     print(f'The folder {stats_folder.stem} was created')
-
-        # if not tokens_folder.exists():
-        #     tokens_folder.mkdir(parents=True, exist_ok=True)
-        #     print(f'The folder {tokens_folder.stem} was created')
-        
-        # if not html_folder.exists():
-        #     html_folder.mkdir(parents=True, exist_ok=True)
-        #     print(f'The folder {html_folder.stem} was created')         
             
         self.quota_filename = stats_folder / 'Quota.csv'
         self.file_path_yt_creators = stats_folder / 'YT_content_creators.csv'
