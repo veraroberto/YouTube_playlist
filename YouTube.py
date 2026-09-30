@@ -33,7 +33,7 @@ from paths import (yt_url,
                    yt_playlist,
                    yt_channel)
 
-default_date = "2005-04-24T03:31:52Z" #Timestamp of the first YouTube video ever published 
+default_date = "2005-04-24T03:31:52Z" #Timestamp of the first YouTube video ever published
 quota_limit = 9900 # I set at this value since sometime the API doesn't allow for more request when you are to close to the limit.
 
 class YouTubeManager:
@@ -42,10 +42,10 @@ class YouTubeManager:
         # 1. Store the paths
         self.files_manager = filesManager()
         self.response_mng = response_manager()
- 
+
         # 2. Authenticate and store the 'youtube' client as 'self.youtube'
         self.youtube = self._authenticate()
-        
+
     def _authenticate(self):
         SCOPES = ["https://www.googleapis.com/auth/youtube"]
         token_file = tokens_folder / "token.pickle"
@@ -94,7 +94,7 @@ class YouTubeManager:
                 id=channel_id
             ).execute()
             self.files_manager.add_to_today_quota(1)
-            return response 
+            return response
         except Exception as e:
             print(f"Error fetching channel {channel_id}: {e} \033[K")
 
@@ -108,7 +108,7 @@ class YouTubeManager:
                 mine=True,  # Fetch playlists from the authenticated account
                 maxResults=50  # Maximum number of results per page
             )
-            
+
             while request:
                 response = request.execute()
                 self.files_manager.add_to_today_quota(1)
@@ -117,7 +117,7 @@ class YouTubeManager:
                         "id": item["id"],
                         'publishedAt': item["snippet"]['publishedAt'],
                         "name": item["snippet"]["title"],
-                        'itemCount':item['contentDetails']['itemCount']                     
+                        'itemCount':item['contentDetails']['itemCount']
                     })
                 # Get the next page of results if available
                 request = self.youtube.playlists().list_next(request, response)
@@ -133,7 +133,7 @@ class YouTubeManager:
             part="snippet,contentDetails,subscriberSnippet",
             mine=True,
             maxResults=50)
-    
+
         while request:
             response = request.execute()
             self.files_manager.add_to_today_quota(1)
@@ -162,11 +162,11 @@ class YouTubeManager:
                 )
                 response = request.execute()
                 self.files_manager.add_to_today_quota(1)
-    
+
                 # Extract video IDs from the response
                 for item in response.get("items", []):
                     video_ids.append(item["snippet"]["resourceId"]["videoId"])
-    
+
                 # Check if there's another page of results
                 next_page_token = response.get("nextPageToken")
                 iterations += 1
@@ -190,7 +190,7 @@ class YouTubeManager:
         except HttpError as e:
             print(f"An error occurred while getting all the Playlist IDs {yt_playlist}{playlist_id}: \033[K\n{e}")
             return []
-    
+
     def create_private_playlist(self, title: str, description: str) -> dict | None:
         """Create a private playlist on YouTube."""
         try:
@@ -213,7 +213,7 @@ class YouTubeManager:
             print(f'Playlist "{title}" was created successfully!\033[K')
             print(f"Playlist ID: {response['id']}")
             print('-'*100)
-   
+
             return response
         except HttpError as e:
             print(f"An error occurred while creating the playlist {title}: {e}")
@@ -241,7 +241,7 @@ class YouTubeManager:
         except HttpError as e:
             print(f"An error occurred while adding {video_id} in the Playlist {playlist_id}: {e}")
             return None
-        
+
     def delete_video_id_from_playlist(self, playlist_id: str,
                                        video_id_to_delete: str,
                                        print_message: bool = True) -> dict | None:
@@ -281,7 +281,7 @@ class YouTubeManager:
             print("⚠️ Video not found in playlist.\033[K")
             print(f"{yt_url}{video_id_to_delete} not in {yt_playlist}{playlist_id}")
             return
-   
+
     def get_response_channel_by_handle(self, handle: str) -> dict:
         handle = "@" + handle.replace('@', "")
         url = f"https://youtube.googleapis.com/youtube/v3/channels?forHandle={handle}&part=snippet,statistics,contentDetails&key={api_key}"
@@ -335,7 +335,7 @@ class YouTubeManager:
                 self.response_mng.get_video_info(response, True)
                 restricted_url[video_id] = video_info['title']
                 print('-'*50)
-            
+
             if not video_info:
                 if delete_video:
                     self.delete_video_id_from_playlist(playlist_id, video_id)
@@ -355,7 +355,7 @@ class YouTubeManager:
                 channel_info = self.response_mng.get_channel_info(channel_response)
                 if not isinstance(channel_info, dict):
                     continue
-                
+
                 handle = channel_info['customUrl']
             if video_info not in handles_playlist[handle]:
                 handles_playlist[handle].append(video_info)
@@ -371,7 +371,7 @@ class YouTubeManager:
                 print(f'{handle:<{align}} | {len(handles_playlist[handle]):0{zeros}d} | {duration_string(duration)}')
         if restricted_url and create_restricted_html:
             create_bookmarks(restricted_url, Path('Restricted.html'), yt_url, "Restricted URLs")
-        
+
         return handles_playlist
 
     def get_handles_from_all_playlists(self):
@@ -395,9 +395,9 @@ class YouTubeManager:
             print(f"{k:<{align}} {len(all_playlist_handles[k])}")
         fm.write_json(all_playlist_handles, Path("All_handles_in_playlist.json"))
         return all_playlist_handles
-            
 
-                        
+
+
     def get_playlist_duration(self) -> float | None:
         playlist_id = input("Playlist ID: ").strip()
         if 'youtube.com' in playlist_id:
@@ -408,7 +408,7 @@ class YouTubeManager:
                 print('There is no playlist ID in the URL')
                 return None
             playlist_id = playlist_ids[0]
-            
+
         playlist_response = self.get_response_from_playlist_id(playlist_id)
         if not isinstance(playlist_response, dict):
             print(f"There is no response for the playlist ID: {playlist_id}")
@@ -418,7 +418,7 @@ class YouTubeManager:
         if not isinstance(playlist_info, dict):
             print(f'There was not possible to get the info of the playlist {playlist_id}')
             return
-        
+
         title = playlist_info['title']
         video_ids = self.get_all_ids_playlist(playlist_id, 100)
         if not isinstance(video_ids, list):
@@ -436,7 +436,7 @@ class YouTubeManager:
                 print(f'{index} {yt_url}{video_id}')
                 continue
             total_duration += video_info['duration']
-        
+
         print(f'{title} => {len(video_ids)} | {duration_string(total_duration)}')
         return total_duration
 
@@ -479,7 +479,7 @@ class YouTubeManager:
                     parsed = urlparse(url)
                     query = parse_qs(parsed.query)
                     video_id = query.get("v", [0])[0]  # default to 0 if missing
-                    # playlist = query.get("list", ["0"])[0] 
+                    # playlist = query.get("list", ["0"])[0]
                     position = query.get("index", ["0"])[0]
                     video_info = {
                             'video_id': video_id,
@@ -487,7 +487,7 @@ class YouTubeManager:
                     }
                     if video_info not in video_sorted:
                             # print(f'{index:02d} {video_id}')
-                            video_sorted.append(video_info)       
+                            video_sorted.append(video_info)
         elif option_selected == options[2]:
             url = input('YouTube URL or Playlist ID: ').strip()
             playlist_id = get_playlist_id(url)
@@ -530,18 +530,17 @@ if __name__ =='__main__':
     # yt.get_handles_from_all_playlists()
     # resp_mng = response_manager()
     # fm = filesManager()
-    from API_KEY import watch_later_id 
+    from API_KEY import watch_later_id
     from app_functions import (get_video_id)
     clear_terminal()
-    # selected = yt.choose_parameter_playlist_id(message="Choose a Playlist", create_playlist=False)
-    # print(selected)
+
 
     dict_functions = {
         "Get Handles for a Playlist: ": lambda: yt.get_all_handles_from_playlist(
-                                                playlist_id= yt.choose_parameter_playlist_id().get('id'),
+                                                playlist_id= yt.choose_parameter_playlist_id().get('playlist_id'),
                                                 delete_video = True,
-                                                print_handles = True, 
-                                                sort_by_duration = False, 
+                                                print_handles = True,
+                                                sort_by_duration = False,
                                                 create_restricted_html = True,
                                                 iterations=10),
         "View repeated Video IDs in a playlist": lambda: yt.get_all_ids_playlist(
@@ -553,7 +552,7 @@ if __name__ =='__main__':
         "Print the Playlist Response": lambda: yt.get_response_from_playlist_id(
                                                 playlist_id= yt.choose_parameter_playlist_id().get('id'),
                                                 print_response=True),
-        
+
         "Do nothing": None}
     while True:
         choose_function = choose_option(list(dict_functions.keys()), f"Choose a Function")
@@ -567,4 +566,3 @@ if __name__ =='__main__':
         if not continue_option:
             break
         clear_terminal()
-        
