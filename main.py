@@ -52,7 +52,7 @@ def main(add_video_ids_to_playlist: bool = True) -> None:
     ## Creates the Dictionary of the Playlists
     playlist_names = yt.get_all_playlists()
     if not playlist_names:
-        print('There was not possible to get the playlist')
+        print('There was not possible to get the playlists')
         return
 
     youtube_names = [file.stem.replace('_', ' ').strip() for file in playlist_folder.iterdir() if file.suffix == '.txt']
@@ -93,7 +93,7 @@ def main(add_video_ids_to_playlist: bool = True) -> None:
 
     ## Exceptions
     skip_handle_shorts_path = exception_folder / 'skip_shorts_handle.txt'
-    skip_shorts_handle = fm.get_elements_from_file(skip_handle_shorts_path)
+    skip_shorts_handle = fm.get_elements_from_file(skip_handle_shorts_path, create_file=True)
 
     short_in_playlist_path = exception_folder / "short_in_playlist.txt"
     short_in_playlist = fm.get_elements_from_file(short_in_playlist_path, create_file=True)
@@ -124,62 +124,17 @@ def main(add_video_ids_to_playlist: bool = True) -> None:
     saved_quota = 0
     manually_added = defaultdict(list)
 
-    not_in_df = []
+
+    videos_added_manually = 0
+    initial_quota = fm.get_today_quota(False)
     for video_id in missing_video_ids:
-        response = yt.get_response_video_id(video_id)
-        if response is None:
-            continue
-        items = response.get('items',[])
-        if not items:
-            continue
-        snippet = items[0].get('snippet', {})
-        channelId = snippet.get('channelId', "")
-        if channelId in YT_df['channelId'].values:
-            handle = YT_df[YT_df['channelId'] == channelId]['Handle'].iloc[0]
-            handle_path = content_creator_folder / f'{handle}.txt'
-            fm.add_element_to_file(handle_path, video_id, sort_list = False, print_statement = True)
-            manually_added[handle].append(response)
-            saved_quota += 49
-
-        else:
-            not_in_df.append(response)
-
-    print(f'The saved quota was: {saved_quota:,}')
-    if not_in_df:
-        print('Handles not in Data Frame')
-        not_in_df_dict = {}
-        for index, response in enumerate(not_in_df,1):
-            video_info = response_mnr.get_video_info(response)
-            if video_info is None:
-                continue
-            title = video_info['title']
-            channelTitle = video_info['channelTitle']
-            publishedAt = video_info['publishedAt']
-            video_id = video_info['video_id']
-            print(f"\t{title}")
-            print(f"\t{channelTitle}")
-            print(f"\t{publishedAt}")
-            print(f"\t{yt_url}{video_id}")
-            not_in_df_dict[video_id] = f'{index:02d} {publishedAt} {title}'
-            print('*'*50)
-        today = date.today()
-        formatted_date = today.strftime("%Y-%m-%d")
-        create_bookmarks(not_in_df_dict,Path(f'{formatted_date} Videos not in DF.html'),yt_url,"Not in DF")
-
-    if manually_added:
-        print('Videos IDs that were manually added to any playlist')
-        for handle in manually_added:
-            responses = manually_added[handle]
-            print(handle)
-            for response in responses:
-                video_info = response_mnr.get_video_info(response)
-                if video_info is None:
-                    continue
-                print(f"\t{video_info['title']}")
-                print(f"\t{video_info['publishedAt']}")
-                print(f"\t{yt_url}{video_info['video_id']}")
-                print('*'*50)
-            print('-'*50)
+        added_video = add_video_manually(video_id)
+        if added_video:
+            videos_added_manually += 1
+    if videos_added_manually:
+        consumed_quota = fm.get_today_quota(False) - initial_quota
+        saved_quota = videos_added_manually * 50 - consumed_quota
+        print(f'The saved quota was: {saved_quota:,} and the videos added manually were: {videos_added_manually}')
 
     # Get the new IDs
     was_braked = False
@@ -279,13 +234,17 @@ def main(add_video_ids_to_playlist: bool = True) -> None:
         if was_braked:
             break
 
-    print(f'Duration to getting the new IDs => {duration_string(time.time() - start)}' + clear_row)
+    
     if not was_braked:
         total_duration = sum(video_id['duration'] for playlist in youtube_playlists for video_id in youtube_playlists[playlist]['new_video_ids'])
-        print(f"Duration of all the new Video IDs => {duration_string(total_duration)}")
-
-        total_videos = sum(len(youtube_playlists[playlist]['new_video_ids']) for playlist in youtube_playlists)
-        print(f'There are {total_videos} total videos to add')
+        if total_duration:
+            print(clear_row + f'Duration to getting the new IDs => {duration_string(time.time() - start)}')
+            print(f"Duration of all the new Video IDs => {duration_string(total_duration)}")
+            total_videos = sum(len(youtube_playlists[playlist]['new_video_ids']) for playlist in youtube_playlists)
+            print(f'There are {total_videos} total videos to add')
+        else:
+            print('There are no new videos to add')
+            return
     else:
         print('There is an error with the request function. You might be blocked')
 

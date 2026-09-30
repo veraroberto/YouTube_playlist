@@ -4,7 +4,8 @@ from googleapiclient.errors import HttpError
 from google_auth_oauthlib.flow import InstalledAppFlow
 from google.auth.transport.requests import Request
 from API_KEY import (api_key,
-                     watch_later_id)
+                    #  watch_later_id,
+                     )
 import requests
 
 from collections import Counter
@@ -17,7 +18,6 @@ from app_functions import (create_bookmarks,
                            get_playlist_id,
                            get_video_id,
                            clear_terminal,
-                           print_dictionary
                            )
 
 from filesManager import filesManager
@@ -442,7 +442,7 @@ class YouTubeManager:
 
     def get_video_ids_by_selection(self) -> None | list:
         options = ['Directly from YouTube',
-                   'Watch Later',
+                #    'Watch Later',
                    'From File',
                    'From URL',
                    ]
@@ -466,13 +466,13 @@ class YouTubeManager:
             if not isinstance(playlist_video_IDs, list):
                 return
             video_sorted = [{'video_id': video_id, 'index': f"{index:03d}"} for index, video_id in enumerate(playlist_video_IDs, 1)]
+        # elif option_selected == options[1]:
+        #     playlist_video_IDs = self.get_all_ids_playlist(watch_later_id, 20)
+        #     if playlist_video_IDs is None:
+        #         print(f'There was a problem getting the Video IDs of the Watch Later Playlist ID: {watch_later_id}')
+        #         return
+        #     video_sorted = [{'video_id': video_id, 'index':  f"{index:03d}"} for index, video_id in enumerate(playlist_video_IDs, 1)]
         elif option_selected == options[1]:
-            playlist_video_IDs = self.get_all_ids_playlist(watch_later_id, 20)
-            if playlist_video_IDs is None:
-                print(f'There was a problem getting the Video IDs of the Watch Later Playlist ID: {watch_later_id}')
-                return
-            video_sorted = [{'video_id': video_id, 'index':  f"{index:03d}"} for index, video_id in enumerate(playlist_video_IDs, 1)]
-        elif option_selected == options[2]:
             urls = self.files_manager.get_elements_from_file(Path('videos.txt'))
             video_sorted = []
             for index, url in enumerate(urls, 1):
@@ -488,7 +488,7 @@ class YouTubeManager:
                     if video_info not in video_sorted:
                             # print(f'{index:02d} {video_id}')
                             video_sorted.append(video_info)       
-        elif option_selected == options[3]:
+        elif option_selected == options[2]:
             url = input('YouTube URL or Playlist ID: ').strip()
             playlist_id = get_playlist_id(url)
             playlist_video_IDs = self.get_all_ids_playlist(playlist_id, 10)
@@ -505,7 +505,7 @@ class YouTubeManager:
                                      ) -> dict[str,str | None] :
         playlists = self.get_all_playlists()
         if playlists:
-            playlists.insert(0,{'name': "Watch Later", 'id': watch_later_id})
+            # playlists.insert(0,{'name': "Watch Later", 'id': watch_later_id})
             playlist_names = [pl.get('name') for pl in playlists]
             new_playlist_str = 'Create new Playlist'
             if create_playlist:

@@ -16,6 +16,8 @@ fm = filesManager()
 yt = YouTubeManager()
 res_mng = response_manager()
 
+YT_df = fm.YT_content_creators
+
 def get_video_id(url: str | None = None) -> str:
     if not url:
         url = input("Video ID or URL: ").strip()
@@ -32,42 +34,49 @@ def get_playlist_id(url: str) -> str:
     query = parse_qs(parsed.query)
     return query.get("list", [url])[0]  # default to 0 if missing
 
-def add_video_manually(url: str) -> None:
+def add_video_manually(url: str) -> dict | None:
     if url is None:
         video_id = get_video_id(input('Video ID to add a file: '))
     else:
         video_id = get_video_id(url.strip())
         if video_id == 0:
             print(f'{url} is not a valid url or video id')
-            return
+            return 
     if search_string_folder(content_creator_folder, video_id):
-        return
-    response = yt.get_response_video_id(video_id) # type: ignore
+        return 
+    response = yt.get_response_video_id(video_id) 
     
     video_info = res_mng.get_video_info(response, False, True)
     if not video_info:
         print(f'Video ID {video_id} does not have any information')
-        return
+        return 
     
-
     channelId = video_info['channelId']
-    response_channel = yt.get_channel_response(channelId)
-    if not response_channel:
-        print(f'There was not possible to get the Response of the channel of the Video ID: {video_id}')
-        return
-    channel_info =  res_mng.get_channel_info(response_channel)
-    if channel_info is None:
-        print(f'There was not possible to get a response for the channel of {yt_channel}{channelId}')
-        return
-    handle = channel_info['customUrl']
-    handle_file_path = content_creator_folder / f'{handle}.txt'
+    if channelId in YT_df['channelId'].values:
+        handle = YT_df.loc[YT_df['channelId'] == channelId, 'Handle'].values[0]
+        handle_file_path = content_creator_folder / f'{handle}.txt'
+
+    else:
+        response_channel = yt.get_channel_response(channelId)
+        if not response_channel:
+            print(f'There was not possible to get the Response of the channel of the Video ID: {video_id}')
+            return 
+        channel_info =  res_mng.get_channel_info(response_channel)
+        if channel_info is None:
+            print(f'There was not possible to get a response for the channel of {yt_channel}{channelId}')
+            return 
+        handle = channel_info['customUrl']
+        handle_file_path = content_creator_folder / f'{handle}.txt'
 
     if handle_file_path.exists():
-        res_mng.get_video_info(response, True, True)
-        print('*'*75)
-        fm.add_element_to_file(handle_file_path, video_id, True, True)
-    else:        
+        fm.add_element_to_file(handle_file_path, video_id, sort_list=False, print_statement=True, create_file = False)
+        res_mng.get_video_info(response, print_info=True, del_extra_keys=True)
+        print("*"*100)
+    else:
         print(f'The file handle {handle_file_path.stem} does not exists')
+        return 
+
+    return video_info
 
 def manage_exceptions() -> None:
     files_dict = {file.stem: file for file in exception_folder.rglob('*') if file.suffix == '.txt' or file.suffix == '.json'}
