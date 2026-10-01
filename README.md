@@ -58,14 +58,3 @@ pip install -r requirements.txt
 python main.py
 ```
 
-### 🧰 Command Descriptions
-
-| Command         | Description                                                       |
-| :-------------- | :---------------------------------------------------------------- |
-| quota           | Displays current API quota usage                                  |
-| add-video       | Adds a single video to a the database.                            |
-| add-list-videos | Adds multiple videos from a list to the database.                 |
-| add-exception   | Manages handles that should be excluded (e.g. shorts-only).       |
-| not-add-videos  | Runs the program to create bookmarks without adding to playlists. |
-| manage-df       | Adds or removes channel handles in the main DataFrame.            |
-
