@@ -206,6 +206,10 @@ def print_dictionary(dictionary: dict) -> None:
             print(f'{k+": ":<{align + 2}} {duration_string(v)}')
         else:
             print(f'{k+": ":<{align + 2}} {v}')
-        
+
+def pluralize(count: int, singular: str, plural: str | None = None) -> str:
+    if count == 1:
+        return singular
+    return plural if plural else f"{singular}s"
 if __name__ == '__main__':
     pass

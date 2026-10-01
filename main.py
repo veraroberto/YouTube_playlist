@@ -32,7 +32,8 @@ from app_functions import (choose_option,
                            remove_accents,
                            duration_string,
                            is_short,
-                           create_bookmarks)
+                           create_bookmarks,
+                           pluralize)
 from manage_video_ids import (add_video_manually,
                               manage_exceptions,
                               get_video_id)
@@ -119,23 +120,31 @@ def main(add_video_ids_to_playlist: bool = True) -> None:
     print_all_responses = fm.get_elements_from_file(exception_folder / "print_all_responses.txt", create_file=True)
 
     if missing_video_ids:
-        print(f'There are {len(missing_video_ids)} videos not in the files')
-
+        is_are = "is" if len(missing_video_ids) == 1 else "are"
+        print(f'There {is_are} {len(missing_video_ids)} {pluralize(len(missing_video_ids), "video")} not in the files')
     saved_quota = 0
-    manually_added = defaultdict(list)
-
-
     videos_added_manually = 0
+    handle_not_in_files = []
     initial_quota = fm.get_today_quota(False)
     for video_id in missing_video_ids:
         added_video = add_video_manually(video_id)
         if added_video:
             videos_added_manually += 1
+        else:
+            handle_not_in_files.append(video_id)
     if videos_added_manually:
         consumed_quota = fm.get_today_quota(False) - initial_quota
         saved_quota = videos_added_manually * 50 - consumed_quota
         print(f'The saved quota was: {saved_quota:,} and the videos added manually were: {videos_added_manually}')
-
+    if handle_not_in_files:
+        digits = len(str(len(handle_not_in_files)))
+        was_were = "was" if len(handle_not_in_files) == 1 else "were"
+        print('*'*50 + clear_row)
+        print(f'\033[1;32mThe following video {pluralize(len(handle_not_in_files), "ID", "IDs")} {was_were} not added because the handle is not in the files:{reset_format}\033[0;32m')
+        for index, video_id in enumerate(handle_not_in_files, 1):
+            print(f'{index:0{digits}d} {yt_url}{video_id}')    
+        
+        print(reset_format,'*'*50)
     # Get the new IDs
     was_braked = False
     num_rows = len(YT_content_creators_iter)
@@ -233,7 +242,6 @@ def main(add_video_ids_to_playlist: bool = True) -> None:
 
         if was_braked:
             break
-
     
     if not was_braked:
         total_duration = sum(video_id['duration'] for playlist in youtube_playlists for video_id in youtube_playlists[playlist]['new_video_ids'])

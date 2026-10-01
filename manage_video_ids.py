@@ -34,7 +34,7 @@ def get_playlist_id(url: str) -> str:
     query = parse_qs(parsed.query)
     return query.get("list", [url])[0]  # default to 0 if missing
 
-def add_video_manually(url: str) -> dict | None:
+def add_video_manually(url: str, print_statement: bool = False) -> dict | None:
     if url is None:
         video_id = get_video_id(input('Video ID to add a file: '))
     else:
@@ -69,11 +69,12 @@ def add_video_manually(url: str) -> dict | None:
         handle_file_path = content_creator_folder / f'{handle}.txt'
 
     if handle_file_path.exists():
-        fm.add_element_to_file(handle_file_path, video_id, sort_list=False, print_statement=True, create_file = False)
+        fm.add_element_to_file(handle_file_path, video_id, sort_list=False, print_statement=False, create_file = False)
         res_mng.get_video_info(response, print_info=True, del_extra_keys=True)
         print("*"*100)
     else:
-        print(f'The file handle {handle_file_path.stem} does not exists')
+        if print_statement: 
+            print(f'The file handle {handle_file_path.stem} does not exists')
         return 
 
     return video_info
