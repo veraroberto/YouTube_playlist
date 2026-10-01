@@ -14,7 +14,6 @@ to private playlists using the YouTube Data API.
 - [▶️ Usage](#️-usage)
   - [1. Install dependencies](#1-install-dependencies)
   - [2. Run the program](#2-run-the-program)
-  - [🧰 Command Descriptions](#-command-descriptions)
 
 ## Main File
 Run the main.py file. You should have no problem with the execution. 
