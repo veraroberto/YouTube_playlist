@@ -37,7 +37,7 @@ Run the main.py file. You should have no problem with the execution.
 
 To reduce daily quota usage| the project stores cached information in `.txt` and `.csv` files and creates the following folders:
 
-- `Content Creators/`: each YouTube channel (handle) has its own file storing video IDs already added.
+- `Content Creators/`: each YouTube channel (handle) has its own file storing video IDs already added. When a new handle is added to the Data Frame, all video IDs are gonna be added to the handle file, except the newest one.
 - `Exceptions/`: handles that should not be added to any playlist (e.g. shorts-only channels).
 - `Playlists/`: each `.txt` file represents a playlist and contains associated handles.
 - `Restrictions/`: videos blocked in your region are stored here and skipped.
