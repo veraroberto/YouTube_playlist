@@ -10,7 +10,7 @@ import requests
 
 from collections import Counter
 from pathlib import Path
-from functools import partial
+from colors import Color
 
 from app_functions import (create_bookmarks,
                            duration_string,
@@ -18,6 +18,7 @@ from app_functions import (create_bookmarks,
                            get_playlist_id,
                            get_video_id,
                            clear_terminal,
+                           pluralize
                            )
 
 from filesManager import filesManager
@@ -42,6 +43,7 @@ class YouTubeManager:
         # 1. Store the paths
         self.files_manager = filesManager()
         self.response_mng = response_manager()
+        self.color = Color()
 
         # 2. Authenticate and store the 'youtube' client as 'self.youtube'
         self.youtube = self._authenticate()
@@ -143,7 +145,8 @@ class YouTubeManager:
         return subscriptions
 
     def get_all_ids_playlist(self, playlist_id: str | None, max_iterations: int = 5,
-                             print_iterations: bool= False, count_repeated: bool = False) -> list:
+                             print_iterations: bool= False, count_repeated: bool = False,
+                             print_information: bool = True) -> list:
         # The API only allows a max_iteration = 400
         if playlist_id is None:
             print('The Playlist ID is None. Doing Nothing')
@@ -182,7 +185,7 @@ class YouTubeManager:
                 if any(c > 1 for c in counted_vids.values()):
                     print(f'Repeated elements in {yt_playlist}{playlist_id}\033[K')
                     for e, count in counted_vids.items():
-                        if count > 1:
+                        if count > 1 and print_information:
                             print(f'Repated {count}: {yt_url}{e}')
                             indexes = [str(index) for index, element in enumerate(video_ids,1) if element == e]
                             print(f'{e} => indexes {", ".join(indexes)}')
@@ -309,27 +312,30 @@ class YouTubeManager:
                                       print_handles: bool = False,
                                       sort_by_duration: bool = False,
                                       create_restricted_html: bool = False,
-                                      iterations: int = 10) -> dict:
+                                      iterations: int = 10,
+                                      print_message: bool = False) -> dict:
         if playlist_id is None:
             print('The playlist ID is None. Nothing is going to be done')
             return {}
         df = self.files_manager.YT_content_creators
         if playlist_id == 'LL':
             iterations = 6
+                                                           
         video_ids = self.get_all_ids_playlist(playlist_id, iterations)
         if not video_ids:
             return {}
-        print(f'There are {len(video_ids)} in the playlist')
+        if print_message:
+            print(f'There are {len(video_ids)} in the playlist')
         handles_playlist = defaultdict(list)
         restricted_url = defaultdict(str)
         for index, video_id in enumerate(video_ids, 1):
             response = self.get_response_video_id(video_id)
-            if response is None:
-                continue
             restriction = self.response_mng.is_restricted(response)
             video_info = self.response_mng.get_video_info(response)
-            if video_info is None:
+            if not response or not video_info:
+                print(f"{yt_playlist}{playlist_id}\nThere was a problem getting the response for the video ID: {video_id}. Index: {index}\033[K")
                 continue
+
             if restriction:
                 print(f'The video ID: {video_id} is restricted. Index: {index}')
                 self.response_mng.get_video_info(response, True)
@@ -360,21 +366,30 @@ class YouTubeManager:
             if video_info not in handles_playlist[handle]:
                 handles_playlist[handle].append(video_info)
         if print_handles:
-            align = max(len(h) for h in handles_playlist)
-            zeros = len(str(max(len(handles_playlist[k]) for k in handles_playlist)))
-            if sort_by_duration:
-                sorted_handles = sorted(handles_playlist, key= lambda x: sum(dur.get('duration', 0) for dur in handles_playlist[x]), reverse=True)
-            else:
-                sorted_handles = sorted(handles_playlist, key= lambda x: len(handles_playlist[x]), reverse=True)
-            for handle in sorted_handles:
-                duration = sum(dur.get('duration', 0) for dur in handles_playlist[handle])
-                print(f'{handle:<{align}} | {len(handles_playlist[handle]):0{zeros}d} | {duration_string(duration)}')
+            self.print_handles(handles_playlist, sort_by_duration=sort_by_duration)
         if restricted_url and create_restricted_html:
             create_bookmarks(restricted_url, Path('Restricted.html'), yt_url, "Restricted URLs")
 
         return handles_playlist
-
-    def get_handles_from_all_playlists(self):
+    
+    def print_handles(self, handles_dict: dict, sort_by_duration: bool = False) -> None:
+        if not handles_dict:
+            print('The handles dictionary is empty. Nothing to print')
+            return
+        align = max(len(h) for h in handles_dict)
+        zeros = len(str(max(len(handles_dict[k]) for k in handles_dict)))
+        if sort_by_duration:
+            sorted_handles = sorted(handles_dict, key= lambda x: sum(dur.get('duration', 0) for dur in handles_dict[x]), reverse=True)
+        else:
+            sorted_handles = sorted(handles_dict, key= lambda x: len(handles_dict[x]), reverse=True)
+        for handle in sorted_handles:
+            duration = sum(dur.get('duration', 0) for dur in handles_dict[handle])
+            print(f'{handle:<{align}} | {len(handles_dict[handle]):0{zeros}d} | {duration_string(duration)}')
+        total_videos = sum(len(handles_dict[k]) for k in handles_dict)
+        
+        print(f'{self.color.BLUE}{self.color.BOLD}There are a total of {total_videos} {pluralize(total_videos, "video", "videos")} in all the playlists {self.color.RESET}')
+         
+    def get_handles_from_all_playlists(self, sort_by_duration: bool = True):
         playlists = [file.stem.replace('_', ' ') for file in playlist_folder.iterdir() if file.suffix.lower() == '.txt']
         align = max(len(p) for p in playlists)
         playlist_info = self.get_all_playlists()
@@ -382,17 +397,14 @@ class YouTubeManager:
         for playlist_name in playlists:
             playlist_id = next((d["id"] for d in playlist_info if playlist_name in d.values()), None)
             if playlist_id:
-                handles_dict = self.get_all_handles_from_playlist(playlist_id)
+                handles_dict = self.get_all_handles_from_playlist(playlist_id, print_message=False)
                 for k, value in handles_dict.items():
                     if k in all_playlist_handles:
                         all_playlist_handles[k].extend(value)
                     else:
                         all_playlist_handles[k] = value
 
-        align = max(len(k) for k in all_playlist_handles)
-        sorted_handles = sorted(all_playlist_handles, key= lambda x: len(all_playlist_handles[x]), reverse=True)
-        for k in sorted_handles:
-            print(f"{k:<{align}} {len(all_playlist_handles[k])}")
+        self.print_handles(all_playlist_handles, sort_by_duration=sort_by_duration)
         fm.write_json(all_playlist_handles, Path("All_handles_in_playlist.json"))
         return all_playlist_handles
 
@@ -524,23 +536,32 @@ class YouTubeManager:
 
         return {"playlist_id": None, "name": None}
 
+    def get_subs_not_in_df(self) -> list:
+        df = self.files_manager.YT_content_creators
+        channelId_df = df['channelId'].values   
+        subscriptions = self.get_subscriptions()
+        for sub in subscriptions:
+            snippet = sub.get('snippet', {})
+            resourceId = snippet.get('resourceId', {})
+            channelId = resourceId.get('channelId', {})         
+            if channelId not in channelId_df:
+                title = snippet.get('title')
+                print(title)
+                print(f'{yt_channel}{channelId}')
+                print('*'*50)
+
 if __name__ =='__main__':
     yt = YouTubeManager()
     fm = filesManager()
-    # yt.get_handles_from_all_playlists()
-    # resp_mng = response_manager()
-    # fm = filesManager()
-    from API_KEY import watch_later_id
-    from app_functions import (get_video_id)
     clear_terminal()
-
+    # yt.get_handles_from_all_playlists()
 
     dict_functions = {
         "Get Handles for a Playlist: ": lambda: yt.get_all_handles_from_playlist(
                                                 playlist_id= yt.choose_parameter_playlist_id().get('playlist_id'),
                                                 delete_video = True,
                                                 print_handles = True,
-                                                sort_by_duration = False,
+                                                sort_by_duration = True,
                                                 create_restricted_html = True,
                                                 iterations=10),
         "View repeated Video IDs in a playlist": lambda: yt.get_all_ids_playlist(
@@ -552,7 +573,8 @@ if __name__ =='__main__':
         "Print the Playlist Response": lambda: yt.get_response_from_playlist_id(
                                                 playlist_id= yt.choose_parameter_playlist_id().get('id'),
                                                 print_response=True),
-
+        "Get the Handles from all the Playlists": lambda: yt.get_handles_from_all_playlists(sort_by_duration=True),
+        "Get the Subsriptions that are not in DF": lambda: yt.get_subs_not_in_df(),
         "Do nothing": None}
     while True:
         choose_function = choose_option(list(dict_functions.keys()), f"Choose a Function")
@@ -564,5 +586,8 @@ if __name__ =='__main__':
                 dict_functions[choose_function]()
         continue_option = choose_option([True, False], "Continue with another functionn: ")
         if not continue_option:
-            break
+            break#
         clear_terminal()
+
+    
+    fm.get_today_quota(print_statement=True)

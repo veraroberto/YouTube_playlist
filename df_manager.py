@@ -137,7 +137,8 @@ class df_manager:
         if info_df is None:
             print(f'There was no info to add to the new row ')
             return
-        handle = info_df['customUrl']
+            
+        handle = remove_accents(info_df['customUrl'])
         channelTitle = info_df['channelTitle']
         channelId = info_df['channelId']
         uploads = info_df['uploads']   
@@ -198,7 +199,10 @@ class df_manager:
                 exception_files.remove(cast(str,file))
 
     def delete_information_in_files(self) -> None:
-        handle = remove_accents(input('Select a handle to delete: ').strip().lower().replace(" ","_"))
+        # handle = remove_accents(input('Select a handle to delete: ').strip().lower().replace(" ","_"))
+        handle = input('Select a handle to delete: ').strip().lower().replace(" ","_")
+
+        
         # Folders
         # content_creator_folder = self.files_manager.content_creator_folder
         if handle not in self.YT_content_creators['Handle'].values:

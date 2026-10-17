@@ -22,13 +22,13 @@ class filesManager:
         self.file_path_yt_creators = stats_folder / 'YT_content_creators.csv'
 
         if self.file_path_yt_creators.exists():
-            self.YT_content_creators = pd.read_csv(self.file_path_yt_creators)
+            self.YT_content_creators = pd.read_csv(self.file_path_yt_creators, encoding='utf-8-sig')
         else:
             self.YT_content_creators = pd.DataFrame(columns=columns_df)          
         
     def write_csv_safely(self, df: pd.DataFrame, filename: Path) -> None:
-        with open(filename, 'w', newline='', encoding='utf-8-sig') as f:
-            df.to_csv(f, index=False, date_format="%Y-%b-%d")
+        # Use standard 'utf-8' without BOM
+        df.to_csv(filename, index=False, encoding='utf-8-sig', date_format="%Y-%b-%d")
 
     def read_json(self, filename: Path, create_file: bool = False) -> dict:
         filename = Path(filename).with_suffix('.json')
@@ -213,10 +213,10 @@ class filesManager:
 
 
 if __name__ == "__main__":
-    from app_functions import (clear_terminal)
-    clear_terminal()
-    fm = filesManager()
-    dictionary = fm.read_json(Path("All_handles_in_playlist.json"))
-    align = max(len(k) for k in dictionary)
-    for k, value in dictionary.items():
-        print(f'{k:<{align}} {len(value):>2}')
+    df_path = stats_folder / 'YouTube.csv'
+    # df = pd.read_csv(df_path, encoding='utf-8-sig')
+    df = pd.read_csv(df_path)
+    print(repr(df['title'].iloc[149]))
+    # # Strip invisible leading/trailing whitespace & BOM characters across all text columns
+    # for col in df.select_dtypes(include='object').columns:
+    #     df[col] = df[col].astype(str).str.replace('\ufeff', '', regex=False).str.strip()

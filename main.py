@@ -142,7 +142,8 @@ def main(add_video_ids_to_playlist: bool = True) -> None:
         print('*'*50 + clear_row)
         print(f'\033[1;32mThe following video {pluralize(len(handle_not_in_files), "ID", "IDs")} {was_were} not added because the handle is not in the files:{reset_format}\033[0;32m')
         for index, video_id in enumerate(handle_not_in_files, 1):
-            print(f'{index:0{digits}d} {yt_url}{video_id}')    
+            print(f'{index:0{digits}d} {yt_url}{video_id}')   
+        create_bookmarks({video_id: f'{index:0{digits}d} {yt_url}{video_id}' for index, video_id in enumerate(handle_not_in_files, 1)}, html_folder / 'missing_video_ids.html', yt_url, 'Missing Video IDs') 
         
         print(reset_format,'*'*50)
     # Get the new IDs

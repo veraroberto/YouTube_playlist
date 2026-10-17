@@ -5,7 +5,8 @@ from app_functions import (duration_string,
                            print_dictionary)
 import json, isodate, re
 from paths import (yt_playlist,
-                   yt_url)
+                   yt_url,
+                   yt_channel)
 # from urllib.request import urlopen
 
 default_date = "2005-04-24T03:31:52Z" #Timestamp of the first YouTube video ever published 
@@ -63,6 +64,8 @@ class response_manager():
                     print(f"{k+": ":<{align + 2}} {yt_url}{v}")
                 elif k == 'viewCount' and v.isdigit():
                     print(f"{k+": ":<{align + 2}} {int(v):,}")
+                elif k == 'channelId':
+                    print(f"{k+": ":<{align + 2}} {yt_channel}{v}")
                 elif isinstance(v, dict) and v:
                     print(k+": ")
                     align_2 = max(len(k_2) for k_2 in v)
@@ -170,7 +173,7 @@ class response_manager():
         items = response.get('items', [])
         if not items:
             print('There is no items response')
-            print(response)
+
             return
         else: 
             contentDetails = items[0].get('contentDetails', {})
