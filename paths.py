@@ -75,6 +75,8 @@ yt_url = 'https://www.youtube.com/watch?v='
 yt_playlist = 'https://www.youtube.com/playlist?list='
 yt_channel = 'https://www.youtube.com/channel/'
 
+shorts_playlist_name = 'Shorts To Watch'
+other_playlist_name = 'Videos To Watch'
 
 
 

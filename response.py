@@ -62,7 +62,7 @@ class response_manager():
                     print(f"{k+": ":<{align + 2}} {duration_string(v)}")
                 elif k == 'video_id':
                     print(f"{k+": ":<{align + 2}} {yt_url}{v}")
-                elif k == 'viewCount' and v.isdigit():
+                elif k == 'viewCount' and v is not None and v.isdigit():
                     print(f"{k+": ":<{align + 2}} {int(v):,}")
                 elif k == 'channelId':
                     print(f"{k+": ":<{align + 2}} {yt_channel}{v}")

@@ -2,7 +2,8 @@ from pathlib import Path
 from urllib.parse import urlparse, parse_qs
 from app_functions import (choose_option, 
                            search_string_folder,
-                           remove_accents)
+                           remove_accents,
+                           clear_terminal)
 from paths import (content_creator_folder,
                    exception_folder,
                    yt_channel)
@@ -93,19 +94,24 @@ def manage_exceptions() -> None:
         print('Creating a new file')
     else:
         file_path = files_dict[option_choosen]
-        handle = input('Handle: ').strip().lower()
-        if handle not in handles_df:
-            print(f'The handles {handle} is not in the DataFrame and is not going to be added to any excption')
-        elif file_path.suffix.lower() == '.txt':
-            fm.add_element_to_file(file_path, handle, True, True)
-        else:
-            key = input(f'The value to add in the file {file_path.name} to the handle {handle}: ').strip().lower()
-            handle_dict = fm.read_json(file_path, False)
-            if handle in handle_dict and key not in handle_dict[handle]:
-                handle_dict[handle].append(key)
+        while True:
+            handle = input(f'New Handle in {file_path.stem}: ').strip().lower()
+            if handle not in handles_df:
+                print(f'The handles {handle} is not in the DataFrame and is not going to be added to any excption')
+            elif file_path.suffix.lower() == '.txt':
+                fm.add_element_to_file(file_path, handle, True, True)
             else:
-                handle_dict[handle] = [key]
-            fm.write_json(handle_dict, file_path)
+                key = input(f'The value to add in the file {file_path.name} to the handle {handle}: ').strip().lower()
+                handle_dict = fm.read_json(file_path, False)
+                if handle in handle_dict and key not in handle_dict[handle]:
+                    handle_dict[handle].append(key)
+                else:
+                    handle_dict[handle] = [key]
+                fm.write_json(handle_dict, file_path)
+            if not choose_option([True, False], f'Add a new handle to {file_path.stem}'):
+                break
+            clear_terminal()
+            
 
 
         

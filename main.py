@@ -10,28 +10,29 @@ from paths import (content_creator_folder,
                    yt_url,
                    yt_channel,
                    clear_row,
-                   reset_format)
+                   reset_format,
+                   shorts_playlist_name,
+                   other_playlist_name)
 from typing import cast
 from response import response_manager
 
 # from itertools import count
 from pathlib import Path
 from collections import defaultdict
-
+from colors import Color
 # import pandas as pd
 
-import time
-import re
-import pyperclip
-from datetime import date
-import json
-import random
+import time, inspect, re, pyperclip, json, random
 
+from datetime import date
+
+formats_color = Color()
 from app_functions import (choose_option,
                            clear_terminal,
                            remove_accents,
                            duration_string,
                            is_short,
+                           print_dictionary,
                            create_bookmarks,
                            pluralize)
 from manage_video_ids import (add_video_manually,
@@ -56,6 +57,7 @@ def main(add_video_ids_to_playlist: bool = True) -> None:
         print('There was not possible to get the playlists')
         return
 
+
     youtube_names = [file.stem.replace('_', ' ').strip() for file in playlist_folder.iterdir() if file.suffix == '.txt']
     youtube_playlists = defaultdict(lambda:
                                     {"Handles":[],
@@ -64,8 +66,7 @@ def main(add_video_ids_to_playlist: bool = True) -> None:
                                     "new_video_ids": [],
                                     })
 
-    shorts_playlist_name = 'Shorts To Watch'
-    other_playlist_name = 'Videos To Watch'
+
     vertical_video_id = fm.get_elements_from_file(exception_folder / "vertical_video.txt", create_file=False)
     special_playlist = [other_playlist_name, shorts_playlist_name]
     # youtube_names.extend({'Path': None, 'Name': playlist} for playlist in special_playlist)
@@ -81,8 +82,10 @@ def main(add_video_ids_to_playlist: bool = True) -> None:
         youtube_playlists[playlist]['Playlist_ID'] = playlist_id
 
         if playlist_id:
-            video_ids = yt.get_all_ids_playlist(playlist_id, 300, count_repeated=True)
-
+            # video_ids = yt.get_all_ids_playlist(playlist_id, 300, count_repeated=True)
+            upload_responses = yt.get_all_ids_playlist(playlist_id, max_iterations=300, count_repeated=True)
+            video_ids = [item.get('videoId') for item in upload_responses]
+            
             if not video_ids:
                 if playlist_id in YT_df['uploads'].values:
                     channelId = YT_df[YT_df['uploads'] == playlist_id]['channelId'].iloc[0]
@@ -116,8 +119,6 @@ def main(add_video_ids_to_playlist: bool = True) -> None:
 
     missing_video_ids = fm.find_missing_elements(all_ids_from_playlist)
     missing_video_ids = [x for x in missing_video_ids if x not in vertical_video_id]
-
-    print_all_responses = fm.get_elements_from_file(exception_folder / "print_all_responses.txt", create_file=True)
 
     if missing_video_ids:
         is_are = "is" if len(missing_video_ids) == 1 else "are"
@@ -159,7 +160,7 @@ def main(add_video_ids_to_playlist: bool = True) -> None:
         channelId = row.channelId
         uploads = cast(str, row.uploads)
         message = f'{ cast(int, row.Index) + 1:0{digits}d} / {num_rows}: {channelTitle}'
-        print(message + clear_row, end='\r')
+        print(formats_color.CLEAR_LINE, message, end='\r', sep="")
         iterations = 1
         if handle in more_iterations:
             """
@@ -167,44 +168,46 @@ def main(add_video_ids_to_playlist: bool = True) -> None:
             more iterations to get the new video IDs
             """
             iterations = 10
-        videos_ids = yt.get_all_ids_playlist(uploads, iterations)
-        if not videos_ids:
-            if videos_ids is None:
-                continue
-            elif uploads in YT_df['uploads'].values:
+        # videos_ids = yt.get_all_ids_playlist(uploads, iterations)
+        items_responses = yt.get_all_ids_playlist(uploads, max_iterations=iterations, count_repeated=False)
+        # video_ids = [item.get('videoId') for item in items_responses]
+        if not items_responses:
+            if uploads in YT_df['uploads'].values:
                 channelId = YT_df[YT_df['uploads'] == uploads]['channelId'].iloc[0]
                 channelTitle = YT_df[YT_df['uploads'] == uploads]['channelTitle'].iloc[0]
-                
                 print(f"The Channel {channelTitle} with the handle {handle} might be deleted: {yt_channel}{channelId}\033[K")
+            continue
 
-        videos_ids.reverse()
         file_path = content_creator_folder / f'{handle}.txt'
         handle_ids = fm.get_elements_from_file(file_path, create_file = True)
         playlist_key = next((key for key, handles in youtube_playlists.items() if handle in handles.get('Handles',[])), None)
 
-        for index, video_id in enumerate(videos_ids,1):
-
-            if video_id not in handle_ids:
+        for index, item_response in enumerate(items_responses,1):
+            video_id = item_response.get('videoId')
+            privacyStatus = item_response.get('privacyStatus')
+            if video_id in handle_ids or privacyStatus == 'private':
+                continue
+            elif privacyStatus == 'privacyStatusUnspecified':
+                print(f'{formats_color.CLEAR_LINE}{handle} Deleted video {yt_url}{video_id}')
+                fm.add_element_to_file(file_path, video_id, False)
+            elif privacyStatus != "public":
+                print(f'{formats_color.CLEAR_LINE}{formats_color.RED}{formats_color.BOLD}{formats_color.UNDERLINE}',
+                      f'The video ID {video_id} has a privacy status of {privacyStatus}. The Code needs to be updated in the line {inspect.currentframe().f_lineno}.',
+                      f'{formats_color.RESET}', sep="")
+            else:
                 response = yt.get_response_video_id(video_id)
-                if not response:
-                    print(f'{handle} {yt_url}{video_id}')
-                    fm.add_element_to_file(file_path, video_id, False)
-                    continue
-                video_id_info = response_mnr.get_video_info(response)
+                video_id_info = response_mnr.get_video_info(response, print_info=False)
                 video_id_info['file_path'] = file_path
                 video_id_info['response'] = response
                 title = video_id_info["title"]
                 exception_title = handle_dict_name_excepts.get(handle, [])
                 clean_title = remove_accents(title.lower())
-                if handle in print_all_responses:
-                    print(f"\033[1;32m", "*"*50)
-                    response_mnr.get_video_info(response, print_info=True)
-                    print(f'{"*"*50}{reset_format}')
+
                 if video_id_info['liveBroadcastContent'] == 'upcoming' or  video_id_info['duration'] == 0:
                     continue
                 elif video_id_info['viewCount'] is None:
-                    print('*'*50 + clear_row)
-                    print(f'The video might be members only. Not adding it')
+                    print(f"{formats_color.CLEAR_LINE}",'*'*50, sep="")
+                    print(f'The video might be members only. Not adding it to the files')
                     response_mnr.get_video_info(response, print_info=True)
                     fm.add_element_to_file(file_path, video_id, False)
                 elif response_mnr.is_restricted(response):
@@ -217,7 +220,7 @@ def main(add_video_ids_to_playlist: bool = True) -> None:
                     any(remove_accents(t.lower()) in clean_title for t in exception_title):
                     skipping_title = next((title for title in exception_title if title in clean_title), "")
                     bold_word = f"\033[1;4m{skipping_title}\033[0m\033[K"
-                    print(f'Skipping the video for from \x1b[1;31m {handle}\033[m the title: {bold_word}')
+                    print(f'Skipping the video from {formats_color.format(str(handle), formats_color.RED, formats_color.BOLD)}. The title contains: {bold_word}')
                     response_mnr.get_video_info(response, True, True)
                     fm.add_element_to_file(file_path,video_id, False)
                     print('*'*100)
@@ -243,6 +246,9 @@ def main(add_video_ids_to_playlist: bool = True) -> None:
 
         if was_braked:
             break
+
+    else:
+        print(f'There are not handle with private video and there was not any private video to be added.')
     
     if not was_braked:
         total_duration = sum(video_id['duration'] for playlist in youtube_playlists for video_id in youtube_playlists[playlist]['new_video_ids'])
