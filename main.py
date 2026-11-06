@@ -22,7 +22,7 @@ from collections import defaultdict
 from colors import Color
 # import pandas as pd
 
-import time, inspect, re, pyperclip, json, random
+import time, inspect, re, pyperclip, random
 
 from datetime import date
 
@@ -32,12 +32,11 @@ from app_functions import (choose_option,
                            remove_accents,
                            duration_string,
                            is_short,
-                           print_dictionary,
                            create_bookmarks,
                            pluralize)
-from manage_video_ids import (add_video_manually,
+from manage_videoIds import (add_video_manually,
                               manage_exceptions,
-                              get_video_id)
+                              get_videoId)
 from df_manager import df_manager
 
 fm = filesManager()
@@ -46,7 +45,7 @@ response_mnr = response_manager()
 df_mnr = df_manager()
 
 
-def main(add_video_ids_to_playlist: bool = True) -> None:
+def main(add_videoIds_to_playlist: bool = True) -> None:
     YT_df = fm.YT_content_creators
     YT_content_creators_iter = df_mnr.get_df_to_iterate(playlist_folder, YT_df)
     if YT_content_creators_iter is None:
@@ -60,14 +59,14 @@ def main(add_video_ids_to_playlist: bool = True) -> None:
 
     youtube_names = [file.stem.replace('_', ' ').strip() for file in playlist_folder.iterdir() if file.suffix == '.txt']
     youtube_playlists = defaultdict(lambda:
-                                    {"Handles":[],
+                                    {"customUrls":[],
                                     "Playlist_ID": "",
-                                    "video_ids": [],
-                                    "new_video_ids": [],
+                                    "videoIds": [],
+                                    "new_videoIds": [],
                                     })
 
 
-    vertical_video_id = fm.get_elements_from_file(exception_folder / "vertical_video.txt", create_file=False)
+    vertical_videoId = fm.get_elements_from_file(exception_folder / "vertical_video.txt", create_file=False)
     special_playlist = [other_playlist_name, shorts_playlist_name]
     # youtube_names.extend({'Path': None, 'Name': playlist} for playlist in special_playlist)
     youtube_names.extend(special_playlist)
@@ -75,29 +74,29 @@ def main(add_video_ids_to_playlist: bool = True) -> None:
     for playlist in youtube_names:
         file_path = playlist_folder / f'{playlist.replace(" ","_")}.txt'
         if file_path.exists():
-            handles = file_path.read_text(encoding="utf-8").splitlines()
-            youtube_playlists[playlist]['Handles'].extend(handles)
+            customUrls = file_path.read_text(encoding="utf-8").splitlines()
+            youtube_playlists[playlist]['customUrls'].extend(customUrls)
         #Getting the Playlist ID
         playlist_id = next((d["id"] for d in playlist_names if playlist in d.values()), None)
         youtube_playlists[playlist]['Playlist_ID'] = playlist_id
 
         if playlist_id:
-            # video_ids = yt.get_all_ids_playlist(playlist_id, 300, count_repeated=True)
+            # videoIds = yt.get_all_ids_playlist(playlist_id, 300, count_repeated=True)
             upload_responses = yt.get_all_ids_playlist(playlist_id, max_iterations=300, count_repeated=True)
-            video_ids = [item.get('videoId') for item in upload_responses]
+            videoIds = [item.get('videoId') for item in upload_responses]
             
-            if not video_ids:
+            if not videoIds:
                 if playlist_id in YT_df['uploads'].values:
                     channelId = YT_df[YT_df['uploads'] == playlist_id]['channelId'].iloc[0]
                     print(f"{yt_channel}{channelId}")
-            youtube_playlists[playlist]['video_ids'].extend(video_ids)
+            youtube_playlists[playlist]['videoIds'].extend(videoIds)
 
-    all_ids_from_playlist = [video_id for playlist in youtube_playlists.values() for video_id in playlist['video_ids']]
+    all_ids_from_playlist = [videoId for playlist in youtube_playlists.values() for videoId in playlist['videoIds']]
     print(f'There are {len(all_ids_from_playlist):,} videos in all the playlists')
 
     ## Exceptions
-    skip_handle_shorts_path = exception_folder / 'skip_shorts_handle.txt'
-    skip_shorts_handle = fm.get_elements_from_file(skip_handle_shorts_path, create_file=True)
+    skip_customUrl_shorts_path = exception_folder / 'skip_shorts_customUrl.txt'
+    skip_shorts_customUrl = fm.get_elements_from_file(skip_customUrl_shorts_path, create_file=True)
 
     short_in_playlist_path = exception_folder / "short_in_playlist.txt"
     short_in_playlist = fm.get_elements_from_file(short_in_playlist_path, create_file=True)
@@ -105,8 +104,8 @@ def main(add_video_ids_to_playlist: bool = True) -> None:
     skip_long_videos_60m_path = exception_folder / 'skip_long_videos_60m.txt'
     skip_long_videos = fm.get_elements_from_file(skip_long_videos_60m_path, create_file = True)
 
-    skip_live_handle = exception_folder /'skip_live_handle.txt'
-    skip_liveStreamingDetails_handle = fm.get_elements_from_file(skip_live_handle, create_file = True)
+    skip_live_customUrl = exception_folder /'skip_live_customUrl.txt'
+    skip_liveStreamingDetails_customUrl = fm.get_elements_from_file(skip_live_customUrl, create_file = True)
 
     only_add_long_videos_path = exception_folder / 'only_add_long_videos.txt'
     only_long_videos = fm.get_elements_from_file(only_add_long_videos_path, create_file = True)
@@ -114,37 +113,37 @@ def main(add_video_ids_to_playlist: bool = True) -> None:
     more_iterations_path = exception_folder / "more_iterations.txt"
     more_iterations = fm.get_elements_from_file(more_iterations_path, create_file=True)
 
-    handle_dict_name_excepts_path = exception_folder / "handle_dict_name_excepts.json"
-    handle_dict_name_excepts = fm.read_json(handle_dict_name_excepts_path, True)
+    customUrl_dict_name_excepts_path = exception_folder / "customUrl_dict_name_excepts.json"
+    customUrl_dict_name_excepts = fm.read_json(customUrl_dict_name_excepts_path, True)
 
-    missing_video_ids = fm.find_missing_elements(all_ids_from_playlist)
-    missing_video_ids = [x for x in missing_video_ids if x not in vertical_video_id]
+    missing_videoIds = fm.find_missing_elements(all_ids_from_playlist)
+    missing_videoIds = [x for x in missing_videoIds if x not in vertical_videoId]
 
-    if missing_video_ids:
-        is_are = "is" if len(missing_video_ids) == 1 else "are"
-        print(f'There {is_are} {len(missing_video_ids)} {pluralize(len(missing_video_ids), "video")} not in the files')
+    if missing_videoIds:
+        is_are = "is" if len(missing_videoIds) == 1 else "are"
+        print(f'There {is_are} {len(missing_videoIds)} {pluralize(len(missing_videoIds), "video")} not in the files')
     saved_quota = 0
     videos_added_manually = 0
-    handle_not_in_files = []
+    customUrl_not_in_files = []
     initial_quota = fm.get_today_quota(False)
-    for video_id in missing_video_ids:
-        added_video = add_video_manually(video_id)
+    for videoId in missing_videoIds:
+        added_video = add_video_manually(videoId)
         if added_video:
             videos_added_manually += 1
         else:
-            handle_not_in_files.append(video_id)
+            customUrl_not_in_files.append(videoId)
     if videos_added_manually:
         consumed_quota = fm.get_today_quota(False) - initial_quota
         saved_quota = videos_added_manually * 50 - consumed_quota
         print(f'The saved quota was: {saved_quota:,} and the videos added manually were: {videos_added_manually}')
-    if handle_not_in_files:
-        digits = len(str(len(handle_not_in_files)))
-        was_were = "was" if len(handle_not_in_files) == 1 else "were"
+    if customUrl_not_in_files:
+        digits = len(str(len(customUrl_not_in_files)))
+        was_were = "was" if len(customUrl_not_in_files) == 1 else "were"
         print('*'*50 + clear_row)
-        print(f'\033[1;32mThe following video {pluralize(len(handle_not_in_files), "ID", "IDs")} {was_were} not added because the handle is not in the files:{reset_format}\033[0;32m')
-        for index, video_id in enumerate(handle_not_in_files, 1):
-            print(f'{index:0{digits}d} {yt_url}{video_id}')   
-        create_bookmarks({video_id: f'{index:0{digits}d} {yt_url}{video_id}' for index, video_id in enumerate(handle_not_in_files, 1)}, html_folder / 'missing_video_ids.html', yt_url, 'Missing Video IDs') 
+        print(f'\033[1;32mThe following video {pluralize(len(customUrl_not_in_files), "ID", "IDs")} {was_were} not added because the customUrl is not in the files:{reset_format}\033[0;32m')
+        for index, videoId in enumerate(customUrl_not_in_files, 1):
+            print(f'{index:0{digits}d} {yt_url}{videoId}')   
+        create_bookmarks({videoId: f'{index:0{digits}d} {yt_url}{videoId}' for index, videoId in enumerate(customUrl_not_in_files, 1)}, html_folder / 'missing_videoIds.html', yt_url, 'Missing Video IDs') 
         
         print(reset_format,'*'*50)
     # Get the new IDs
@@ -155,14 +154,14 @@ def main(add_video_ids_to_playlist: bool = True) -> None:
     for row in YT_content_creators_iter.itertuples():
         if was_braked:
             break
-        handle = row.Handle
+        customUrl = row.customUrl
         channelTitle = row.channelTitle
         channelId = row.channelId
         uploads = cast(str, row.uploads)
         message = f'{ cast(int, row.Index) + 1:0{digits}d} / {num_rows}: {channelTitle}'
         print(formats_color.CLEAR_LINE, message, end='\r', sep="")
         iterations = 1
-        if handle in more_iterations:
+        if customUrl in more_iterations:
             """
             In some Podcasts the IDs are not sorted by by date in descending order, so it would need
             more iterations to get the new video IDs
@@ -170,92 +169,93 @@ def main(add_video_ids_to_playlist: bool = True) -> None:
             iterations = 10
         # videos_ids = yt.get_all_ids_playlist(uploads, iterations)
         items_responses = yt.get_all_ids_playlist(uploads, max_iterations=iterations, count_repeated=False)
-        # video_ids = [item.get('videoId') for item in items_responses]
+
         if not items_responses:
             if uploads in YT_df['uploads'].values:
                 channelId = YT_df[YT_df['uploads'] == uploads]['channelId'].iloc[0]
                 channelTitle = YT_df[YT_df['uploads'] == uploads]['channelTitle'].iloc[0]
-                print(f"The Channel {channelTitle} with the handle {handle} might be deleted: {yt_channel}{channelId}\033[K")
+                print(f"The Channel {channelTitle} with the customUrl {customUrl} might be deleted: {yt_channel}{channelId}\033[K")
             continue
 
-        file_path = content_creator_folder / f'{handle}.txt'
-        handle_ids = fm.get_elements_from_file(file_path, create_file = True)
-        playlist_key = next((key for key, handles in youtube_playlists.items() if handle in handles.get('Handles',[])), None)
+        file_path = content_creator_folder / f'{customUrl}.txt'
+        videoIds = fm.get_elements_from_file(file_path, create_file = True)
+        playlist_key = next((key for key, customUrls in youtube_playlists.items() if customUrl in customUrls.get('customUrls',[])), None)
 
         for index, item_response in enumerate(items_responses,1):
-            video_id = item_response.get('videoId')
+            videoId = item_response.get('videoId')
             privacyStatus = item_response.get('privacyStatus')
-            if video_id in handle_ids or privacyStatus == 'private':
+            if videoId in videoIds or privacyStatus == 'private':
                 continue
             elif privacyStatus == 'privacyStatusUnspecified':
-                print(f'{formats_color.CLEAR_LINE}{handle} Deleted video {yt_url}{video_id}')
-                fm.add_element_to_file(file_path, video_id, False)
+                print(f'{formats_color.CLEAR_LINE}{customUrl} Deleted video {yt_url}{videoId}')
+                fm.add_element_to_file(file_path, videoId, False)
             elif privacyStatus != "public":
                 print(f'{formats_color.CLEAR_LINE}{formats_color.RED}{formats_color.BOLD}{formats_color.UNDERLINE}',
-                      f'The video ID {video_id} has a privacy status of {privacyStatus}. The Code needs to be updated in the line {inspect.currentframe().f_lineno}.',
+                      f'The video ID {videoId} has a privacy status of {privacyStatus}. The Code needs to be updated in the line {inspect.currentframe().f_lineno}.',
                       f'{formats_color.RESET}', sep="")
             else:
-                response = yt.get_response_video_id(video_id)
-                video_id_info = response_mnr.get_video_info(response, print_info=False)
-                video_id_info['file_path'] = file_path
-                video_id_info['response'] = response
-                title = video_id_info["title"]
-                exception_title = handle_dict_name_excepts.get(handle, [])
+                response = yt.get_response_videoId(videoId)
+                videoId_info = response_mnr.get_video_info(response, print_info=False)
+                videoId_info['file_path'] = file_path
+                videoId_info['response'] = response
+                videoId_info['customUrl'] = customUrl
+                videoId_info['uploads'] = uploads
+                videoId_info['channelTitle'] = channelTitle
+                videoId_info['channelId'] = channelId
+                title = videoId_info["title"]
+                exception_title = customUrl_dict_name_excepts.get(customUrl, [])
                 clean_title = remove_accents(title.lower())
 
-                if video_id_info['liveBroadcastContent'] == 'upcoming' or  video_id_info['duration'] == 0:
+                if videoId_info['liveBroadcastContent'] == 'upcoming' or  videoId_info['duration'] == 0:
                     continue
-                elif video_id_info['viewCount'] is None:
+                elif videoId_info['viewCount'] is None:
                     print(f"{formats_color.CLEAR_LINE}",'*'*50, sep="")
                     print(f'The video might be members only. Not adding it to the files')
                     response_mnr.get_video_info(response, print_info=True)
-                    fm.add_element_to_file(file_path, video_id, False)
+                    fm.add_element_to_file(file_path, videoId, False)
                 elif response_mnr.is_restricted(response):
-                    fm.add_element_to_file(file_path, video_id, False)
-                    response_mnr.add_response_df(restriction_folder / f'{handle}.csv', response)
+                    fm.add_element_to_file(file_path, videoId, False)
+                    response_mnr.add_response_df(restriction_folder / f'{customUrl}.csv', response)
 
-                elif video_id_info['liveStreamingDetails'] and handle in skip_liveStreamingDetails_handle:
-                    fm.add_element_to_file(file_path,video_id, False)
-                elif handle in handle_dict_name_excepts and \
+                elif videoId_info['liveStreamingDetails'] and customUrl in skip_liveStreamingDetails_customUrl:
+                    fm.add_element_to_file(file_path,videoId, False)
+                elif customUrl in customUrl_dict_name_excepts and \
                     any(remove_accents(t.lower()) in clean_title for t in exception_title):
                     skipping_title = next((title for title in exception_title if title in clean_title), "")
                     bold_word = f"\033[1;4m{skipping_title}\033[0m\033[K"
-                    print(f'Skipping the video from {formats_color.format(str(handle), formats_color.RED, formats_color.BOLD)}. The title contains: {bold_word}')
+                    print(f'Skipping the video from {formats_color.format(str(customUrl), formats_color.RED, formats_color.BOLD)}. The title contains: {bold_word}')
                     response_mnr.get_video_info(response, True, True)
-                    fm.add_element_to_file(file_path,video_id, False)
+                    fm.add_element_to_file(file_path,videoId, False)
                     print('*'*100)
 
-                elif (handle in only_long_videos and video_id_info['duration'] < 35*60) or \
-                (handle in skip_long_videos and video_id_info['duration'] >= 60*60) or (video_id_info['duration'] >= 60*60*3):
-                    fm.add_element_to_file(file_path,video_id, False)
+                elif (customUrl in only_long_videos and videoId_info['duration'] < 35*60) or \
+                (customUrl in skip_long_videos and videoId_info['duration'] >= 60*60) or (videoId_info['duration'] >= 60*60*3):
+                    fm.add_element_to_file(file_path,videoId, False)
                 else:
-                    short = is_short(video_id)
+                    short = is_short(videoId)
                     time.sleep(random.uniform(0.5, 1))
                     if short is None:
                         was_braked = True
                         break
-                    elif short is True and handle not in short_in_playlist:
-                        if handle not in skip_shorts_handle:
-                            youtube_playlists[shorts_playlist_name]['new_video_ids'].append(video_id_info)
+                    elif short is True and customUrl not in short_in_playlist:
+                        if customUrl not in skip_shorts_customUrl:
+                            youtube_playlists[shorts_playlist_name]['new_videoIds'].append(videoId_info)
                         else:
-                            fm.add_element_to_file(file_path,video_id, False)
+                            fm.add_element_to_file(file_path,videoId, False)
                     elif playlist_key:
-                        youtube_playlists[playlist_key]['new_video_ids'].append(video_id_info)
+                        youtube_playlists[playlist_key]['new_videoIds'].append(videoId_info)
                     else:
-                        youtube_playlists[other_playlist_name]['new_video_ids'].append(video_id_info)
+                        youtube_playlists[other_playlist_name]['new_videoIds'].append(videoId_info)
 
         if was_braked:
             break
-
-    else:
-        print(f'There are not handle with private video and there was not any private video to be added.')
     
     if not was_braked:
-        total_duration = sum(video_id['duration'] for playlist in youtube_playlists for video_id in youtube_playlists[playlist]['new_video_ids'])
+        total_duration = sum(videoId['duration'] for playlist in youtube_playlists for videoId in youtube_playlists[playlist]['new_videoIds'])
         if total_duration:
             print(clear_row + f'Duration to getting the new IDs => {duration_string(time.time() - start)}')
             print(f"Duration of all the new Video IDs => {duration_string(total_duration)}")
-            total_videos = sum(len(youtube_playlists[playlist]['new_video_ids']) for playlist in youtube_playlists)
+            total_videos = sum(len(youtube_playlists[playlist]['new_videoIds']) for playlist in youtube_playlists)
             print(f'There are {total_videos} total videos to add')
         else:
             print('There are no new videos to add')
@@ -270,14 +270,14 @@ def main(add_video_ids_to_playlist: bool = True) -> None:
     not_added_videos = defaultdict(list)
     quota_i = fm.get_today_quota(False)
     for playlist in youtube_playlists:
-        new_video_ids = youtube_playlists[playlist]['new_video_ids']
+        new_videoIds = youtube_playlists[playlist]['new_videoIds']
         playlist_id = youtube_playlists[playlist]["Playlist_ID"]
-        new_video_ids.sort(key= lambda x: x['publishedAt'])
+        new_videoIds.sort(key= lambda x: x['publishedAt'])
         if fm.get_today_quota() > quota_limit:
-            add_video_ids_to_playlist = False
+            add_videoIds_to_playlist = False
             was_braked = True
-        if new_video_ids:
-            if not playlist_id and not was_braked and add_video_ids_to_playlist:
+        if new_videoIds:
+            if not playlist_id and not was_braked and add_videoIds_to_playlist:
                 response_playlist = yt.create_private_playlist(playlist, playlist)
                 time.sleep(1)
                 if not response_playlist:
@@ -288,24 +288,24 @@ def main(add_video_ids_to_playlist: bool = True) -> None:
                 if not playlist_id:
                     continue
                 if "shorts" in playlist.lower():
-                    for video_id in vertical_video_id:
-                        yt.add_video_to_playlist(playlist_id, video_id)
+                    for videoId in vertical_videoId:
+                        yt.add_video_to_playlist(playlist_id, videoId)
 
-            for video_info in new_video_ids:
+            for video_info in new_videoIds:
                 file_path = video_info['file_path']
-                video_id = video_info['video_id']
-                message = f'Adding {video_id} from {file_path.stem[0:50]} to the playlist {playlist}' + clear_row
+                videoId = video_info['videoId']
+                message = f'Adding {videoId} from {file_path.stem[0:50]} to the playlist {playlist}' + clear_row
                 print(message + clear_row, end='\r')
-                if not add_video_ids_to_playlist:
+                if not add_videoIds_to_playlist:
                     not_added_videos[playlist].append(video_info)
                 elif fm.get_today_quota() > quota_limit:
-                    add_video_ids_to_playlist = False
-                    break_message = f'The process was interrupted. The last video is {video_id} from {file_path.name}' + clear_row
+                    add_videoIds_to_playlist = False
+                    break_message = f'The process was interrupted. The last video is {videoId} from {file_path.name}' + clear_row
                     was_braked = True
-                elif add_video_ids_to_playlist and video_id not in youtube_playlists[playlist]['video_ids']:# and
-                    if yt.add_video_to_playlist(playlist_id, video_id):
-                        fm.add_element_to_file(file_path, video_id, False, False)
-                        youtube_playlists[playlist]['video_ids'].append(video_id)
+                elif add_videoIds_to_playlist and videoId not in youtube_playlists[playlist]['videoIds']:# and
+                    if yt.add_video_to_playlist(playlist_id, videoId):
+                        fm.add_element_to_file(file_path, videoId, False, False)
+                        youtube_playlists[playlist]['videoIds'].append(videoId)
                         added_videos[playlist].append(video_info)
                 else:
                     pass
@@ -338,8 +338,8 @@ def main(add_video_ids_to_playlist: bool = True) -> None:
             print(f'{playlist}:')
             responses = sorted(not_added_videos[playlist], key= lambda x: x['publishedAt'])
             for index, response in enumerate(responses, 1):
-                video_id = response['video_id']
-                print(f'\t{index:02d} {yt_url}{video_id}')
+                videoId = response['videoId']
+                print(f'\t{index:02d} {yt_url}{videoId}')
             print('*'*50)
         if not_added_videos:
             today = date.today()
@@ -353,15 +353,15 @@ def main(add_video_ids_to_playlist: bool = True) -> None:
                 for index, video in enumerate(todays_video, 1):
                     publishedAt = video['response']['items'][0]['snippet']['publishedAt']
                     title = video['title']
-                    video_id = video['video_id']
-                    urls_dict[video_id] = f'{index:02d} {title}'
+                    videoId = video['videoId']
+                    urls_dict[videoId] = f'{index:02d} {title}'
                 file_html = html_folder / f'{formatted_date}_{playlist.replace(" ", "_")}.html'
                 create_bookmarks(urls_dict, file_html, yt_url,playlist)
         return
 
 def add_video() -> None:
     while True:
-        add_video_manually(get_video_id(input("Video ID or URL: ")))
+        add_video_manually(get_videoId(input("Video ID or URL: ")))
         if not choose_option([True, False], message="Add another video ID: "):
             break
     return
@@ -384,8 +384,8 @@ def manage_df() -> None:
 
 def manage_playlist() -> None:
     options = [
-        "Move a handle to a new Playlist",
-        "Delete handles from all playlist",
+        "Move a customUrl to a new Playlist",
+        "Delete customUrls from all playlist",
         "Delete a playlist"
     ]
     option_choosen = choose_option(options, "Playlist Manager: ")
@@ -399,30 +399,30 @@ def manage_playlist() -> None:
                 print(f"The Playlist {playlist_name} doesn't exist.")
             else:
                 try:
-                    playlist_handle = fm.get_elements_from_file(plalylist_path)
+                    playlist_customUrl = fm.get_elements_from_file(plalylist_path)
                     plalylist_path.unlink(missing_ok=True)
-                    print(f"The Playlist {playlist_name} contains the handles: {', '.join(playlist_handle)}  and was deleted")
+                    print(f"The Playlist {playlist_name} contains the customUrls: {', '.join(playlist_customUrl)}  and was deleted")
                 except Exception as e:
                     print(f"{plalylist_path.name} {e}")
         else:
-            handle = input("Handle to manage: ").strip().lower()
-            if handle not in df_mnr.handles_df:
-                print('The handle is not present in the Data Frame')
+            customUrl = input("customUrl to manage: ").strip().lower()
+            if customUrl not in df_mnr.customUrls_df:
+                print('The customUrl is not present in the Data Frame')
                 return
-            fm.delete_string_from_txt_files(playlist_folder, handle)
+            fm.delete_string_from_txt_files(playlist_folder, customUrl)
             if option_choosen == options[0]:            
                 files = [file.stem for file in playlist_folder.iterdir() if not file.name.startswith('.') and file.suffix.lower() == '.txt']
                 files.append('Create New Playlist')
-                choosen_file = choose_option(files, "Add the handle to the Playlist")
+                choosen_file = choose_option(files, "Add the customUrl to the Playlist")
                 if choosen_file is None:
-                    print('There was an error, the handle was not added to any playlist')
+                    print('There was an error, the customUrl was not added to any playlist')
                     return
                 elif choosen_file == files[-1]:
                     new_playlist = input('New Playlist name: ').strip().replace(' ','_')
                     file_path = playlist_folder / f'{new_playlist}.txt'
                 else:
                     file_path = playlist_folder / f'{choosen_file}.txt'
-                    fm.add_element_to_file(file_path, handle, True, True, True)
+                    fm.add_element_to_file(file_path, customUrl, True, True, True)
 
 
 
@@ -431,8 +431,8 @@ def manage_playlist() -> None:
 def add_video_list() -> None:
     input('Click enter when the list of links is in the clipboard ')
     links_list = pyperclip.paste().splitlines()
-    for video_id in links_list:
-        add_video_manually(get_video_id(video_id))
+    for videoId in links_list:
+        add_video_manually(get_videoId(videoId))
     return
 
 if __name__ == "__main__":

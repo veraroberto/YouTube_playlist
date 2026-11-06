@@ -69,7 +69,7 @@ clear_row = '\033[K'
 reset_format = '\033[0m'
 
 
-columns_df = ['Handle', 'channelTitle', 'channelId', 'uploads']
+columns_df = ['customUrl', 'channelTitle', 'channelId', 'uploads']
 
 yt_url = 'https://www.youtube.com/watch?v='
 yt_playlist = 'https://www.youtube.com/playlist?list='

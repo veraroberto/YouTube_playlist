@@ -16,10 +16,10 @@ from app_functions import (create_bookmarks,
                            duration_string,
                            choose_option,
                            get_playlist_id,
-                           get_video_id,
+                           get_videoId,
                            clear_terminal,
                            pluralize,
-                           print_dictionary
+                           print_dictionary,
                            )
 
 from filesManager import filesManager
@@ -39,7 +39,7 @@ from paths import (yt_url,
 
 default_date = "2005-04-24T03:31:52Z" #Timestamp of the first YouTube video ever published
 quota_limit = 9900 # I set at this value since sometime the API doesn't allow for more request when you are to close to the limit.
-handles_base_filename = f'all_handles_in_playlist.json'
+customUrls_base_filename = f'all_customUrls_in_playlist.json'
 class YouTubeManager:
 
     def __init__(self):
@@ -77,19 +77,19 @@ class YouTubeManager:
 
         return build("youtube", "v3", credentials=credentials)
 
-    def get_response_video_id(self, video_id: str | None, print_response: bool = False, show_error: bool = False) -> dict:
-        if video_id is None:
+    def get_response_videoId(self, videoId: str | None, print_response: bool = False, show_error: bool = False) -> dict:
+        if videoId is None:
             print("Video ID is None")
             return {}
         response = self.youtube.videos().list(
             part="snippet,contentDetails,liveStreamingDetails,statistics,status",
-            id=video_id
+            id=videoId
         ).execute()
         self.files_manager.add_to_today_quota(1)
         video_info = self.response_mng.get_video_info(response, print_response, del_extra_keys=True)
         if not video_info:
             if show_error:
-                print(f"Video ID {self.color.format(str(video_id), self.color.RED, self.color.BOLD)} doesn't have a response")
+                print(f"Video ID {self.color.format(str(videoId), self.color.RED, self.color.BOLD)} doesn't have a response")
                 print_dictionary(response)
                 print('*'*50)
             return {}
@@ -152,14 +152,14 @@ class YouTubeManager:
         return subscriptions
 
     def get_all_ids_playlist(self, playlist_id: str | None, max_iterations: int = 5,
-                             print_iterations: bool= False, count_repeated: bool = False) -> list:
+                             print_iterations: bool= False, count_repeated: bool = False) -> list[dict[str, str]]:
         # The API only allows a max_iteration = 400
         if playlist_id is None:
             print('The Playlist ID is None. Doing Nothing')
             return []
         """Retrieve all video IDs from a playlist, handling pagination."""
         iterations = 0
-        video_ids = []
+        videoIds = []
         items_responses = []
         try:
             next_page_token = None
@@ -179,25 +179,23 @@ class YouTubeManager:
                     videoOwnerChannelTitle = snippet.get('videoOwnerChannelTitle')
                     videoOwnerChannelId = snippet.get('videoOwnerChannelId')
                     publishedAt = snippet.get('publishedAt', default_date)
+                    title = snippet.get('title', 'No Title')
                     position = snippet.get('position', 0)
                     contentDetails = item.get('contentDetails', {})
                     videoId = contentDetails.get('videoId')
                     status = item.get('status', {})
                     privacyStatus = status.get('privacyStatus')
+                    # for key in ['thumbnails', 'description']:
+                    #     if key in snippet:
+                    #         del snippet[key]
                     item_response = {'videoOwnerChannelTitle': videoOwnerChannelTitle,
                                      'videoOwnerChannelId': videoOwnerChannelId,
                                      'publishedAt': publishedAt,
                                      'position': position,
                                      'videoId': videoId,
-                                     'privacyStatus': privacyStatus}
+                                     'privacyStatus': privacyStatus,
+                                     'title': title}
                     items_responses.append(item_response)
-                    # print(f'snippet keys: {snippet.keys()}')
-                    # print(f'id keys: {item["id"]}')
-                    # print(f'contentDetails keys {contentDetails.keys()}')
-                    # print(f'status keys {status.keys()}')
-                    # print_dictionary(item_response)
-                    # print('-'*50)
-                    # video_ids.append(item["snippet"]["resourceId"]["videoId"])
 
                 # Check if there's another page of results
                 next_page_token = response.get("nextPageToken")
@@ -208,10 +206,10 @@ class YouTubeManager:
                     break  # Exit loop when there are no more pages
             if print_iterations:
                 print(f'There were {iterations} iterations in the process. The original number of iteration were {max_iterations}\033[K')
-                print(f'There are {len(video_ids)} videos in the playlist')
+                print(f'There are {len(videoIds)} videos in the playlist')
             if count_repeated:
-                video_ids = [r.get('videoId') for r in items_responses]
-                counted_vids = Counter(video_ids)
+                videoIds = [r.get('videoId') for r in items_responses]
+                counted_vids = Counter(videoIds)
                 if any(c > 1 for c in counted_vids.values()):
                     print(f'Repeated elements in {yt_playlist}{playlist_id}\033[K')
                     for e, count in counted_vids.items():
@@ -219,6 +217,7 @@ class YouTubeManager:
                             print(f'Repated {count}: {yt_url}{e}')
                             indexes = [str(index) for index, element in enumerate(items_responses,1) if element == e]
                             print(f'{e} => indexes {", ".join(indexes)}')
+
             return items_responses
         except HttpError as e:
             print(f"An error occurred while getting all the Playlist IDs {yt_playlist}{playlist_id}: \033[K\n{e}")
@@ -252,7 +251,7 @@ class YouTubeManager:
             print(f"An error occurred while creating the playlist {title}: {e}")
             return None
 
-    def add_video_to_playlist(self, playlist_id: str, video_id: str) -> dict | None:
+    def add_video_to_playlist(self, playlist_id: str, videoId: str) -> dict | None:
         """Add a video to a playlist."""
         try:
             request = self.youtube.playlistItems().insert(
@@ -262,7 +261,7 @@ class YouTubeManager:
                         "playlistId": playlist_id,  # The ID of the playlist
                         "resourceId": {
                             "kind": "youtube#video",  # Specify the type as a YouTube video
-                            "videoId": video_id,  # The ID of the video
+                            "videoId": videoId,  # The ID of the video
                         },
 
                     }
@@ -272,11 +271,11 @@ class YouTubeManager:
             self.files_manager.add_to_today_quota(50)
             return response
         except HttpError as e:
-            print(f"An error occurred while adding {video_id} in the Playlist {playlist_id}: {e}")
+            print(f"An error occurred while adding {videoId} in the Playlist {playlist_id}: {e}")
             return None
 
-    def delete_video_id_from_playlist(self, playlist_id: str,
-                                       video_id_to_delete: str,
+    def delete_videoId_from_playlist(self, playlist_id: str,
+                                       videoId_to_delete: str,
                                        print_message: bool = True) -> dict | None:
         # --- Step 1: Find the playlistItemId that matches the videoId ---
         page_token = None
@@ -291,11 +290,11 @@ class YouTubeManager:
             ).execute()
             self.files_manager.add_to_today_quota(1)
             for item in response["items"]:
-                video_id = item["snippet"]["resourceId"]["videoId"]
-                if video_id == video_id_to_delete:
+                videoId = item["snippet"]["resourceId"]["videoId"]
+                if videoId == videoId_to_delete:
                     playlist_item_id = item["id"]
                     if print_message:
-                        print(f"\t🎯 Video ID {video_id_to_delete} found in the playlist")
+                        print(f"\t🎯 Video ID {videoId_to_delete} found in the playlist")
                     break
 
             if playlist_item_id or "nextPageToken" not in response:
@@ -308,16 +307,16 @@ class YouTubeManager:
             self.youtube.playlistItems().delete(id=playlist_item_id).execute()
             self.files_manager.add_to_today_quota(50)
             if print_message:
-                print(f"\t✅ Video deleted from playlist. Video ID: {video_id_to_delete}")
+                print(f"\t✅ Video deleted from playlist. Video ID: {videoId_to_delete}")
             return response
         else:
             print("⚠️ Video not found in playlist.\033[K")
-            print(f"{yt_url}{video_id_to_delete} not in {yt_playlist}{playlist_id}")
+            print(f"{yt_url}{videoId_to_delete} not in {yt_playlist}{playlist_id}")
             return
 
-    def get_response_channel_by_handle(self, handle: str) -> dict:
-        handle = "@" + handle.replace('@', "")
-        url = f"https://youtube.googleapis.com/youtube/v3/channels?forHandle={handle}&part=snippet,statistics,contentDetails&key={api_key}"
+    def get_response_channel_by_customUrl(self, customUrl: str) -> dict:
+        customUrl = "@" + customUrl.replace('@', "")
+        url = f"https://youtube.googleapis.com/youtube/v3/channels?forHandle={customUrl}&part=snippet,statistics,contentDetails&key={api_key}"
         response = requests.get(url)
         self.files_manager.add_to_today_quota(1)
         data = response.json()
@@ -336,10 +335,10 @@ class YouTubeManager:
             self.response_mng.get_playlist_info(response,True)
         return response
 
-    def get_all_handles_from_playlist(self,
+    def get_all_customUrls_from_playlist(self,
                                       playlist_id: str | None,
                                       delete_video: bool = False,
-                                      print_handles: bool = False,
+                                      print_customUrls: bool = False,
                                       sort_by_duration: bool = False,
                                       create_restricted_html: bool = False,
                                       iterations: int = 10,
@@ -352,43 +351,45 @@ class YouTubeManager:
         if playlist_id == 'LL':
             iterations = 6
                                                         
-        item_responses = self.get_all_ids_playlist(playlist_id, 100)
+        item_responses = self.get_all_ids_playlist(playlist_id=playlist_id,
+                                                   max_iterations=iterations, 
+                                                   print_iterations=print_message)
         if not item_responses:
             return {}
-        video_ids = [item.get('videoId') for item in item_responses]
+        videoIds = [item.get('videoId') for item in item_responses]
 
         if print_message:
-            print(f'{self.color.CLEAR_LINE}There are {len(video_ids)} in the playlist', end='\r')
-        handles_playlist = defaultdict(list)
+            print(f'{self.color.CLEAR_LINE}There are {len(videoIds)} in the playlist', end='\r')
+        customUrls_playlist = defaultdict(list)
         restricted_url = defaultdict(str)
-        for index, video_id in enumerate(video_ids, 1):
-            response = self.get_response_video_id(video_id)
+        for index, videoId in enumerate(videoIds, 1):
+            response = self.get_response_videoId(videoId)
             restriction = self.response_mng.is_restricted(response)
             video_info = self.response_mng.get_video_info(response)
             if not response or not video_info:
-                print(f"{yt_playlist}{playlist_id}\nThere was a problem getting the response for the video ID: {video_id}. Index: {index}\033[K")
+                print(f"{yt_playlist}{playlist_id}\nThere was a problem getting the response for the video ID: {videoId}. Index: {index}\033[K")
                 if delete_no_response_video:
-                    self.delete_video_id_from_playlist(playlist_id=playlist_id,
-                                                       video_id_to_delete=video_id,
+                    self.delete_videoId_from_playlist(playlist_id=playlist_id,
+                                                       videoId_to_delete=videoId,
                                                        print_message=True)
                 continue
 
             if restriction:
-                print(f'The video ID: {video_id} is restricted. Index: {index}')
+                print(f'The video ID: {videoId} is restricted. Index: {index}')
                 self.response_mng.get_video_info(response, True)
-                restricted_url[video_id] = video_info['title']
+                restricted_url[videoId] = video_info['title']
                 print('-'*50)
 
             if not video_info:
                 if delete_video:
-                    self.delete_video_id_from_playlist(playlist_id, video_id)
+                    self.delete_videoId_from_playlist(playlist_id, videoId)
                 continue
 
             channelId = video_info.get('channelId', None)
             if channelId in df['channelId'].values:
-                handle = df[df['channelId'] == channelId]['Handle'].iloc[0]
+                customUrl = df[df['channelId'] == channelId]['customUrl'].iloc[0]
             elif channelId is None:
-                print(f'Problem finding the channel ID{video_id}')
+                print(f'Problem finding the channel ID{videoId}')
                 continue
 
             else:
@@ -398,50 +399,49 @@ class YouTubeManager:
                 channel_info = self.response_mng.get_channel_info(channel_response)
                 if not isinstance(channel_info, dict):
                     continue
-
-                handle = channel_info['customUrl']
-            if video_info not in handles_playlist[handle]:
-                handles_playlist[handle].append(video_info)
-        if print_handles:
-            self.print_dict_response_videos(handles_playlist, sort_by_duration=sort_by_duration)
+                customUrl = channel_info['customUrl']
+            if video_info not in customUrls_playlist[customUrl]:
+                customUrls_playlist[customUrl].append(video_info)
+        if print_customUrls:
+            self.print_dict_response_videos(customUrls_playlist, sort_by_duration=sort_by_duration)
         if restricted_url and create_restricted_html:
             create_bookmarks(restricted_url, Path('Restricted.html'), yt_url, "Restricted URLs")
 
-        return handles_playlist
+        return customUrls_playlist
     
-    def print_dict_response_videos(self, handles_dict: dict, sort_by_duration: bool = False) -> None:
-        if not handles_dict:
-            print('The handles dictionary is empty. Nothing to print')
+    def print_dict_response_videos(self, customUrls_dict: dict, sort_by_duration: bool = False) -> None:
+        if not customUrls_dict:
+            print('The customUrls dictionary is empty. Nothing to print')
             return
-        align = max(len(h) for h in handles_dict)
-        zeros = len(str(max(len(handles_dict[k]) for k in handles_dict)))
+        align = max(len(h) for h in customUrls_dict)
+        zeros = len(str(max(len(customUrls_dict[k]) for k in customUrls_dict)))
         if sort_by_duration:
-            sorted_handles = sorted(handles_dict, key= lambda x: sum(dur.get('duration', 0) for dur in handles_dict[x]), reverse=True)
+            sorted_customUrls = sorted(customUrls_dict, key= lambda x: sum(dur.get('duration', 0) for dur in customUrls_dict[x]), reverse=True)
         else:
-            sorted_handles = sorted(handles_dict, key= lambda x: len(handles_dict[x]), reverse=True)
+            sorted_customUrls = sorted(customUrls_dict, key= lambda x: len(customUrls_dict[x]), reverse=True)
         total_duration = 0
-        for handle in sorted_handles:
-            duration = sum(dur.get('duration', 0) for dur in handles_dict[handle])
+        for customUrl in sorted_customUrls:
+            duration = sum(dur.get('duration', 0) for dur in customUrls_dict[customUrl])
             total_duration += duration
-            print(f'{handle:<{align}} | {len(handles_dict[handle]):0{zeros}d} | {duration_string(duration)}')
-        total_videos = sum(len(handles_dict[k]) for k in handles_dict)
+            print(f'{customUrl:<{align}} | {len(customUrls_dict[customUrl]):0{zeros}d} | {duration_string(duration)}')
+        total_videos = sum(len(customUrls_dict[k]) for k in customUrls_dict)
         
         print(f'{self.color.BLUE}{self.color.BOLD}There are a total of {total_videos} {pluralize(total_videos, "video", "videos")}',
               f' in all the playlists.{self.color.RESET}',
               f'Duration all playlist => {self.color.format(duration_string(total_duration), self.color.BOLD, self.color.UNDERLINE)}')
 
     def print_dict_response_videos_files(self) -> None:
-        dictionaries = {file.stem: file for file in Path.cwd().rglob(f"*{handles_base_filename}")}
+        dictionaries = {file.stem: file for file in Path.cwd().rglob(f"*{customUrls_base_filename}")}
         if not dictionaries:
             print("There are not json file in the current folder")
             return
         while True:
-            choose_dictionary = choose_option(list(dictionaries.keys()), "Choose a File to printh the handles")
+            choose_dictionary = choose_option(list(dictionaries.keys()), "Choose a File to print the customUrls")
             if dictionaries[choose_dictionary]:
                 dictionary = self.files_manager.read_json(dictionaries[choose_dictionary])
                 sort_by_duration = choose_option([True, False], f"Print by Duration {choose_dictionary}")
                 self.print_dict_response_videos(dictionary, sort_by_duration = sort_by_duration)
-            if not choose_option([True, False], "Print another Handles file"):
+            if not choose_option([True, False], "Print another customUrls file"):
                 break
             clear_terminal()
 
@@ -468,27 +468,27 @@ class YouTubeManager:
 
         title = playlist_info['title']
         item_responses = self.get_all_ids_playlist(playlist_id, 100)
-        video_ids = [item.get('videoId') for item in item_responses]
-        if not isinstance(video_ids, list):
+        videoIds = [item.get('videoId') for item in item_responses]
+        if not isinstance(videoIds, list):
             print("")
             return
         total_duration = 0
-        for index, video_id in enumerate(video_ids, 1):
-            response = self.get_response_video_id(video_id)
+        for index, videoId in enumerate(videoIds, 1):
+            response = self.get_response_videoId(videoId)
             if response is None:
                 return
             video_info = self.response_mng.get_video_info(response)
             if video_info is None:
                 return
             if 'duration' not in video_info:
-                print(f'{index} {yt_url}{video_id}')
+                print(f'{index} {yt_url}{videoId}')
                 continue
             total_duration += video_info['duration']
 
-        print(f'{title} => {len(video_ids)} | {duration_string(total_duration)}')
+        print(f'{title} => {len(videoIds)} | {duration_string(total_duration)}')
         return total_duration
 
-    def get_video_ids_by_selection(self) -> None | list:
+    def get_videoIds_by_selection(self) -> None | list:
         options = ['Directly from YouTube',
                    'From File',
                    'From URL',
@@ -512,8 +512,8 @@ class YouTubeManager:
             item_responses = self.get_all_ids_playlist(playlist_id, 20)
             if not item_responses:
                 return
-            playlist_video_IDs = [item.get('videoId') for item in item_responses]
-            video_sorted = [{'video_id': video_id, 'index': f"{index:03d}"} for index, video_id in enumerate(playlist_video_IDs, 1)]
+            playlist_videoIds = [item.get('videoId') for item in item_responses]
+            video_sorted = [{'videoId': videoId, 'index': f"{index:03d}"} for index, videoId in enumerate(playlist_videoIds, 1)]
 
         elif option_selected == options[1]:
             urls = self.files_manager.get_elements_from_file(Path('videos.txt'))
@@ -521,23 +521,23 @@ class YouTubeManager:
             for index, url in enumerate(urls, 1):
                     parsed = urlparse(url)
                     query = parse_qs(parsed.query)
-                    video_id = query.get("v", [0])[0]  # default to 0 if missing
+                    videoId = query.get("v", [0])[0]  # default to 0 if missing
                     # playlist = query.get("list", ["0"])[0]
                     position = query.get("index", ["0"])[0]
                     video_info = {
-                            'video_id': video_id,
+                            'videoId': videoId,
                             'index': f'{int(position):03d}'
                     }
                     if video_info not in video_sorted:
-                            # print(f'{index:02d} {video_id}')
+                            # print(f'{index:02d} {videoId}')
                             video_sorted.append(video_info)
         elif option_selected == options[2]:
             url = input('YouTube URL or Playlist ID: ').strip()
             playlist_id = get_playlist_id(url)
-            playlist_video_IDs = self.get_all_ids_playlist(playlist_id, 10)
-            if not isinstance(playlist_video_IDs, list):
+            playlist_videoIds = self.get_all_ids_playlist(playlist_id, 10)
+            if not isinstance(playlist_videoIds, list):
                 return
-            video_sorted = [{'video_id': video_id, 'index':  f"{index:03d}"} for index, video_id in enumerate(playlist_video_IDs, 1)]
+            video_sorted = [{'videoId': videoId, 'index':  f"{index:03d}"} for index, videoId in enumerate(playlist_videoIds, 1)]
         else:
             print('There was problem and no option was selected')
             return
@@ -598,9 +598,6 @@ class YouTubeManager:
             uploads = str(df[df['channelId'] == channelId]['uploads'].iloc[0])
             if not channelID_subscribed and not uploads.startswith('PL'):
                 row = df[df['channelId'] == channelId].iloc[0].to_dict()
-                print(channelID_subscribed)
-                print_dictionary(row)
-                print('-'*75)
                 missing_sub_df.append(channelId)
         
         if missing_sub_df:
@@ -629,13 +626,13 @@ class YouTubeManager:
 
                 if not item_responses:
                     return
-                video_ids = [item.get('videoId') for item in item_responses]
-                for video_id in video_ids:
-                    response = yt.get_response_video_id(video_id=video_id, print_response=False, show_error=False)
+                videoIds = [item.get('videoId') for item in item_responses]
+                for videoId in videoIds:
+                    response = yt.get_response_videoId(videoId=videoId, print_response=False, show_error=False)
                     if response:
                         youtube_playlists[playlist_name].append(self.response_mng.get_video_info(response))
 
-                total_videos += len(video_ids)
+                total_videos += len(videoIds)
         today = date.today()
         formatted_date = today.strftime("%Y_%m_%d")
         duration = duration_string(time.time() - start)
@@ -644,50 +641,57 @@ class YouTubeManager:
         self.files_manager.write_json(youtube_playlists, f'{formatted_date}_all_responses_playlists.json')
         return youtube_playlists
     
-    def get_handles_from_all_playlists(self, dictionary: dict[str:list]) -> dict[str:list]:
+    def get_customUrls_from_all_playlists(self, dictionary: dict[str:list]) -> dict[str:list]:
+        if not dictionary:
+            print('The dictionary is empty. Nothing to do')
+            return {}
         df = self.files_manager.YT_content_creators
-        handles = defaultdict(list)
-        handles_not_in_df = set()
+        customUrls = defaultdict(list)
+        customUrls_not_in_df = set()
         for responses in dictionary.values():
             for video_info in responses:
                 channelId = video_info.get('channelId', "No Avilable")
                 channelTitle = video_info.get('channelTitle')
                 channelTitle_vevo = re.sub('vevo', "", channelTitle, flags=re.IGNORECASE)
                 if channelId in df['channelId'].values:
-                    handle = df[df['channelId'] == channelId]['Handle'].iloc[0]
+                    customUrl = df[df['channelId'] == channelId]['customUrl'].iloc[0]
                 elif channelTitle_vevo in df['channelTitle'].values:
-                    handle = df[df['channelTitle'] == channelTitle_vevo]['Handle'].iloc[0]
-                    print(f'{self.color.RED}{handle} was found by removing vevo from {channelTitle} in the colum channelTitle {self.color.RESET}')
-                elif channelTitle_vevo.lower() in df['Handle'].values:
-                    handle = channelTitle_vevo.lower()
-                    print(f'{handle} was found by removing vevo from {channelTitle} in the colum Handle')
+                    customUrl = df[df['channelTitle'] == channelTitle_vevo]['customUrl'].iloc[0]
+                    print(f'{self.color.RED}{customUrl} was found by removing vevo from {channelTitle} in the colum channelTitle {self.color.RESET}')
+                elif channelTitle_vevo.lower() in df['customUrl'].values:
+                    customUrl = channelTitle_vevo.lower()
+                    print(f'{customUrl} was found by removing vevo from {channelTitle} in the colum customUrl')
                 else:
-                    handle = channelId
-                    handles_not_in_df.add(channelId)
-                handles[handle].append(video_info)
-        if handles_not_in_df:
+                    customUrl = channelId
+                    customUrls_not_in_df.add(channelId)
+                customUrls[customUrl].append(video_info)
+        if customUrls_not_in_df:
             print(f'{self.color.format("Channel IDs not in the Data Frame", self.color.YELLOW, self.color.BOLD)}')
-            for i, channel in enumerate(handles_not_in_df, 1):
+            for i, channel in enumerate(customUrls_not_in_df, 1):
                 channel_resposne = self.get_channel_response(channel_id=channel)
                 response_channel = self.response_mng.get_channel_info(channel_response=channel_resposne)
-                handle = response_channel.get('customUrl', channelId)
-                if handle != channel:
-                    handles[handle].extend(handles[channel])
-                    del handles[channel]
+                customUrl = response_channel.get('customUrl', channelId)
+                if customUrl != channel:
+                    customUrls[customUrl].extend(customUrls[channel])
+                    del customUrls[channel]
                 else:
-                    print(f'Handle not found for {yt_channel}{channel}')
-                print(f'{i} {handle} {yt_channel}{channel}')
+                    print(f'customUrl not found for {yt_channel}{channel}')
+                print(f'{i} {customUrl} {yt_channel}{channel}')
         today = date.today()
         formatted_date = today.strftime("%Y_%m_%d")
-        self.files_manager.write_json(handles,f"{formatted_date}_{handles_base_filename}")
-        return handles
+        self.files_manager.write_json(customUrls,f"{formatted_date}_{customUrls_base_filename}")
+        return customUrls
+
+    def get_customUrls_from_all_playlists_2(self, dictionary: dict[str:list]) -> dict[str:list]:
+        pass
+
 
     def get_personal_info_YouTube(self) -> None:
         dict_functions = {
-            "Get Handles for a Playlist: ": lambda: self.get_all_handles_from_playlist(
+            "Get customUrls for a Playlist: ": lambda: self.get_all_customUrls_from_playlist(
                                                     playlist_id= yt.choose_parameter_playlist_id().get('playlist_id'),
                                                     delete_video = True,
-                                                    print_handles = True,
+                                                    print_customUrls = True,
                                                     sort_by_duration = True,
                                                     create_restricted_html = True,
                                                     iterations=10,
@@ -695,15 +699,15 @@ class YouTubeManager:
             "View repeated Video IDs in a playlist": lambda: self.get_all_ids_playlist(
                                                             playlist_id = yt.choose_parameter_playlist_id().get('id'),
                                                             count_repeated = True),
-            "Get a Video Response": lambda: self.get_response_video_id(
-                                            video_id=get_video_id(input("Video ID or URL: ")),
+            "Get a Video Response": lambda: self.get_response_videoId(
+                                            videoId=get_videoId(input("Video ID or URL: ")),
                                             print_response=True,
                                             show_error=True),
             "Print the Playlist Response": lambda: self.get_response_from_playlist_id(
                                                     playlist_id= yt.choose_parameter_playlist_id().get('id'),
                                                     print_response=True),
-            # "Get the Handles from all the Playlists": lambda: self.get_handles_from_all_playlists(),
-            # "Print the Handles already in a File": lambda: self.print_handles_from_files(),
+            # "Get the customUrls from all the Playlists": lambda: self.get_customUrls_from_all_playlists(),
+            # "Print the customUrls already in a File": lambda: self.print_customUrls_from_files(),
             "Get the Subsriptions that are not in DF": lambda: self.get_subs_not_in_df(),
             "Do nothing": None}
         while True:
@@ -723,13 +727,26 @@ if __name__ =='__main__':
     yt = YouTubeManager()
     fm = filesManager()
     clear_terminal()
-    dictionary = yt.get_video_response_all_playlists()
-    handles_dictionary = yt.get_handles_from_all_playlists(dictionary)
-    # handles_dictionary = fm.read_json('2026_10_30_all_handles_in_playlist')
-    yt.print_dict_response_videos(handles_dict=handles_dictionary, sort_by_duration=True)
-    # # yt.get_personal_info_YouTube()
-    fm.get_today_quota(print_statement=True)
+    # yt.get_personal_info_YouTube()
+    # yt.get_all_customUrls_from_playlist(playlist_id='LL',
+    #                                     delete_video = True,
+    #                                     print_customUrls = True,
+    #                                     sort_by_duration = True,
+    #                                     create_restricted_html = True,
+    #                                     iterations=4,
+    #                                     delete_no_response_video = True)
 
-
+    playlist_items = yt.get_all_ids_playlist(playlist_id='LL',
+                                             max_iterations=6,
+                                             print_iterations=False,
+                                             count_repeated=True)
+    print(f'There are {len(playlist_items)} videos in the playlist')
     
+    for item in playlist_items:
+        privacyStatus = item.get('privacyStatus')
+        if privacyStatus != 'public':
+            print(f"{yt_url}{item.get('videoId')} is {privacyStatus}")
+            print_dictionary(item)
+            print('-'*50)
+    fm.get_today_quota(print_statement=True)    
 

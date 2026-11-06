@@ -1,10 +1,13 @@
 import unicodedata
-import os
+import os, isodate
 import requests
 from bs4 import BeautifulSoup
 from urllib.parse import urlparse, parse_qs
 from pathlib import Path
 
+from colors import Color
+
+formats_color = Color()
 # from paths import content_creator_folder
 # from YouTube import yt_url
 
@@ -68,17 +71,29 @@ def remove_accents(text: str) -> str:
     without_accents = ''.join(c for c in normalized if unicodedata.category(c) != 'Mn')
     return without_accents
 
-def duration_string(duration: float | int) -> str:
-    #Duration in seconds
-    if isinstance(duration, (float, int)):
-        hrs, mins = divmod(duration, 3600)
-        mins, secs = divmod(mins, 60)
-        duration_string = f'{int(hrs):02d}:{int(mins):02d}:{int(secs):02d}'
-        return duration_string
-    else:
-        print(f'{duration} is not a number')
 
-def get_video_id(url: str) -> str:
+def duration_string(duration: float | int | str) -> str:
+    try:
+        # If it's a string, strip whitespace and check if it's an ISO 8601 duration format (starts with 'P')
+        if isinstance(duration, str):
+            clean_duration = duration.strip()
+            if clean_duration.upper().startswith('P'):
+                total_seconds = isodate.parse_duration(clean_duration).total_seconds()
+            else:
+                # Handle standard numeric strings (supports commas like "1,500.50")
+                total_seconds = float(clean_duration.replace(",", ""))
+        else:
+            total_seconds = float(duration)
+
+        hrs, mins = divmod(total_seconds, 3600)
+        mins, secs = divmod(mins, 60)
+        return f'{int(hrs):02d}:{int(mins):02d}:{int(secs):02d}'
+        
+    except (ValueError, isodate.ISO8601Error):
+        print(f'{duration} is not a valid duration or number')
+        return str(duration)  # Fallback to returning original value as string
+
+def get_videoId(url: str) -> str:
     url = url.strip().replace('shorts/', 'watch?v=')
     if 'https://www.youtube.com/watch?v=' not in url:
         return url
@@ -92,8 +107,8 @@ def get_playlist_id(url: str) -> str:
     query = parse_qs(parsed.query)
     return query.get("list", [url])[0]  # default to 0 if missing
 
-def is_short(video_id: str) -> bool | None:
-    url = f'https://www.youtube.com/shorts/{video_id}'
+def is_short(videoId: str) -> bool | None:
+    url = f'https://www.youtube.com/shorts/{videoId}'
     
     # We use a browser-like User-Agent so YouTube doesn't see us as a script
     headers = {
@@ -115,7 +130,7 @@ def is_short(video_id: str) -> bool | None:
         
         # 404 means the video doesn't exist at all
         elif response.status_code == 404:
-            print(f"Video {video_id} not found (404).")
+            print(f"Video {videoId} not found (404).")
             return None
 
         # 429 means you are officially being throttled again
@@ -125,7 +140,7 @@ def is_short(video_id: str) -> bool | None:
 
     except requests.RequestException as e:
         # This prints the name of the error (Timeout, ConnectionError, etc.)
-        print(f"Network error checking {video_id}: {type(e).__name__}")
+        print(f"Network error checking {videoId}: {type(e).__name__}")
         return None
 
     return None
@@ -199,13 +214,75 @@ def get_integer_input(prompt="Enter an integer: "):
             clear_terminal()
             print("Invalid input. Please enter an integer.")
 
-def print_dictionary(dictionary: dict) -> None:
-    align = max(len(k) for k in dictionary)
-    for k, v in dictionary.items():
-        if k == 'duration':
-            print(f'{k+": ":<{align + 2}} {duration_string(v)}')
+def is_numeric(value) -> bool:
+    """Check if a value is an int, float, or a string representing a number."""
+    if isinstance(value, bool):
+        return False
+    if isinstance(value, (int, float)):
+        return True
+    if isinstance(value, str):
+        try:
+            float(value)
+            return True
+        except ValueError:
+            return False
+    return False
+
+def print_dictionary(dictionary: dict, extra_s: int = 0, keys_to_exclude: set = None) -> None:
+    if not dictionary:
+        return
+
+    if keys_to_exclude is None:
+        keys_to_exclude = {'thumbnails', 'description'}
+
+    # Filter out excluded keys to safely calculate alignment
+    active_keys = [k for k in dictionary if k not in keys_to_exclude]
+    if not active_keys:
+        return
+
+    align = max(len(str(k)) for k in active_keys)
+    printed_index = 0
+
+    for key, value in dictionary.items():
+        if key in keys_to_exclude:
+            continue
+
+        printed_index += 1
+        is_even = (printed_index % 2 == 0)
+
+        # Apply alternating colors
+        if is_even:
+            print(f'{formats_color.BLUE}{formats_color.BOLD}', end="")
+
+        key_label = f"{key}:"
+
+        if isinstance(value, dict):
+            print(f'{" " * extra_s}{key_label:<{align + 2}}')
+            print(f'{formats_color.RESET}', end="")
+            # Recursively print nested dictionary with cumulative indentation
+            print_dictionary(value, extra_s=extra_s + align + 2, keys_to_exclude=keys_to_exclude)
+        elif isinstance(value, list):
+            print(f'{" " * extra_s}{key_label:<{align + 2}}')
+            print(f'{formats_color.RESET}', end="")
+            for item in value:
+                if isinstance(item, dict):
+                    print_dictionary(item, extra_s=extra_s + align + 2, keys_to_exclude=keys_to_exclude)
+                else:
+                    print(f'{" " * (extra_s + align + 2)}- {item}')
+        elif key == 'duration':
+            print(f'{" " * extra_s}{key_label:<{align + 2}} {duration_string(value)}')
+        elif is_numeric(value):
+
+            # Clean commas if string, then format nicely with thousands separators
+            clean_val = float(str(value).replace(",", ""))
+            # Keep as integer if it has no decimal part, otherwise format as float
+            formatted_num = f"{int(clean_val):,}" if clean_val.is_integer() else f"{clean_val:,.2f}"
+            print(f'{" " * extra_s}{key_label:<{align + 2}} {formatted_num}')
         else:
-            print(f'{k+": ":<{align + 2}} {v}')
+            print(f'{" " * extra_s}{key_label:<{align + 2}} {value}')
+
+        # Always reset color after printing each row
+        print(f'{formats_color.RESET}', end="")
 
 def pluralize(count: int, singular: str, plural: str | None = None) -> str:
     if count == 1:

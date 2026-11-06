@@ -23,7 +23,7 @@ class response_manager():
         if not items:
             # print(f"No response: {response}")
             return {}
-        video_id = response['items'][0]['id']
+        videoId = response['items'][0]['id']
         snippet = items[0].get('snippet', {})
         publishedAt = snippet.get('publishedAt', default_date)  #Timestamp of the first YouTube video ever published 
         title = snippet.get('title', "")
@@ -37,7 +37,7 @@ class response_manager():
         duration = isodate.parse_duration(duration_iso).total_seconds()
         liveBroadcastContent = snippet.get('liveBroadcastContent', None)
         liveStreamingDetails = items[0].get('liveStreamingDetails', None)
-        video_id_info = {'video_id': video_id,
+        videoId_info = {'videoId': videoId,
                          'channelTitle': channelTitle,
                          'channelId': channelId,
                          'publishedAt': publishedAt,
@@ -50,17 +50,17 @@ class response_manager():
                         }
         if del_extra_keys:
             if not regionRestriction:
-                del video_id_info['regionRestriction']
-            if video_id_info['liveBroadcastContent'] == "none":
-                del video_id_info['liveBroadcastContent']
-            if video_id_info['liveStreamingDetails'] is None:
-                del video_id_info['liveStreamingDetails']
+                del videoId_info['regionRestriction']
+            if videoId_info['liveBroadcastContent'] == "none":
+                del videoId_info['liveBroadcastContent']
+            if videoId_info['liveStreamingDetails'] is None:
+                del videoId_info['liveStreamingDetails']
         if print_info:
-            align = max(len(k) for k in video_id_info)
-            for k, v in video_id_info.items():
+            align = max(len(k) for k in videoId_info)
+            for k, v in videoId_info.items():
                 if k == 'duration':
                     print(f"{k+": ":<{align + 2}} {duration_string(v)}")
-                elif k == 'video_id':
+                elif k == 'videoId':
                     print(f"{k+": ":<{align + 2}} {yt_url}{v}")
                 elif k == 'viewCount' and v is not None and v.isdigit():
                     print(f"{k+": ":<{align + 2}} {int(v):,}")
@@ -76,7 +76,7 @@ class response_manager():
                             print(f'{" " *(align + 3)}{key+": ":<{align_2 + 2}} {val}')
                 else:
                     print(f"{k+": ":<{align + 2}} {v}")
-        return video_id_info
+        return videoId_info
 
     def get_channel_info(self, channel_response: dict) -> dict | None:
         items = channel_response.get('items', {})
@@ -183,9 +183,9 @@ class response_manager():
             if self.current_country in blocked or (allowed and self.current_country not in allowed):
                 if print_restriction:
                     video_info = self.get_video_info(response)
-                    video_id = video_info.get('video_id')
+                    videoId = video_info.get('videoId')
                     print("Restricted Zone:")
-                    print(f"{yt_url}{video_id}")
+                    print(f"{yt_url}{videoId}")
                     for k, v in regionRestriction.items():
                         print(f"{k} {', '.join(v)}")
                 return regionRestriction

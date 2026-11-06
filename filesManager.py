@@ -158,7 +158,7 @@ class filesManager:
         file_path = Path(file_path).with_suffix('.txt')
         elements = self.get_elements_from_file(file_path, create_file)
         
-        # Handle the print statement logic here
+
         if str(element) in elements:
             if print_statement:
                 print(f'{element} is already in {file_path.name}')
@@ -192,7 +192,7 @@ class filesManager:
 
     def delete_string_from_txt_files(self, search_folder, string_s: str) -> None:
     
-        found_handle = False
+        found_string = False
         # files = [file  for folder in search_folder for file in folder.iterdir() if file.suffix =='.txt']
         files = [file for file in search_folder.rglob('*.txt') if not file.name.startswith('.')]
         
@@ -204,19 +204,39 @@ class filesManager:
                 with file.open(mode="w", encoding="utf-8", newline="\n") as f:
                     f.write('\n'.join(strings))
                 print(f'{string_s} was removed from {file.stem}')
-                found_handle = True
+                found_string = True
 
-        if not found_handle:
-            print(f'The handle {string_s} was not found inside any file in the folder {search_folder}')
+        if not found_string:
+            print(f'The customUrl {string_s} was not found inside any file in the folder {search_folder}')
 
+
+
+
+    def find_strings_in_files(self, folder_path: Path = content_creator_folder, target_strings: list = None):
+        folder = Path(folder_path)
+        string_to_file = {}
+        
+        # 1. Load all files into memory and build a lookup dictionary
+        for file_path in folder.glob("*.txt"):
+            with open(file_path, "r", encoding="utf-8") as f:
+                # Strip newline characters from each line
+                for line in f:
+                    string_to_file[line.strip()] = file_path.name
+                    
+        # 2. Search for your 500 elements
+        results = {}
+        missing = []
+        
+        for target in target_strings:
+            if target in string_to_file:
+                results[target] = string_to_file[target]
+            else:
+                missing.append(target)
+                
+        return results, missing
 
 
 
 if __name__ == "__main__":
-    df_path = stats_folder / 'YouTube.csv'
-    # df = pd.read_csv(df_path, encoding='utf-8-sig')
-    df = pd.read_csv(df_path)
-    print(repr(df['title'].iloc[149]))
-    # # Strip invisible leading/trailing whitespace & BOM characters across all text columns
-    # for col in df.select_dtypes(include='object').columns:
-    #     df[col] = df[col].astype(str).str.replace('\ufeff', '', regex=False).str.strip()
+    pass
+
